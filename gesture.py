@@ -106,7 +106,7 @@ IMU.initIMU()       #Initialise the accelerometer, gyroscope and compass
 pastGYRx = 0
 pastGYRz = 0
 count = 0
-command = 0
+command = "NONE"
 
 while True:
 
@@ -142,33 +142,45 @@ while True:
 
     diffGYRx = pastGYRx - GYRx
     diffGYRz = pastGYRz - GYRz
-    print(diffGYRx)
+    #print(diffGYRx)
 
-    if command != 0 :
-        command = 0
+    if command != "NONE" :
+        command = "NONE"
 
-    if diffGYRx > 1000 :    #read clockwise hand motion
-        time.sleep(0.15)            #delay for counter clockwise hand motion
+    if diffGYRx > 1800 :    #read clockwise hand motion
+        #print(diffGYRx)
+        time.sleep(0.35)            #delay for counter clockwise hand motion		.35
         GYRxTemp = IMU.readGYRx()   #read 
-        diffTemp = GYRx - GYRxTemp
-        print("p2")
-        print(diffTemp)
-        if diffTemp < -1000 :     #check for counter clockwise motion
-            print("Next Song")
-            command = 3
-            time.sleep(1.1)
-    if diffGYRx < -1000 : 
-        time.sleep(0.15)            #delay for counter clockwise hand motion
+        diffTempn = GYRx - GYRxTemp
+        #print(diffTemp)
+        if diffTempn < -5000 :     #check for counter clockwise motion
+            #print("Next Song")
+            command = "NEXT"             #the output command for Next Song
+            #print(command)
+            time.sleep(.9)
+    if diffGYRx < -2000 :
+        #print(diffGYRx)
+        time.sleep(0.35)            #delay for counter clockwise hand motion		.35
         GYRxTemp = IMU.readGYRx()   #read 
-        diffTemp = GYRx - GYRxTemp
-        if diffTemp > 1500 :     #check for counter clockwise motion
-            print("Previous Song")
-            command = 4
-            time.sleep(1.1)
-    #if diffGYRz > 1000 :
-    #    print("Play Song")
-    #    command = 1
-    #    time.sleep(1)
+        diffTempp = GYRx - GYRxTemp
+        #print(diffTempp)
+        if diffTempp > 4500 :     #check for counter clockwise motion
+            #print("Previous Song")
+            command = "PREV"             #the output command for Previous Song
+            #print(command)
+            time.sleep(.9)
+    if diffGYRz > 2000 :
+        #print(diffGYRz)
+    	time.sleep(0.4)
+    	GYRzTemp = IMU.readGYRz()
+    	#print(GYRzTemp)
+    	diffTemps = GYRz - GYRzTemp
+        #print(diffTemp)
+    	if diffTemps < -5000 :
+        	#print("Play Song/Pause Song")
+            command = "PP"      #the output command for play and pause
+            #print(command)
+            time.sleep(.9)
 
 
     pastGYRx = GYRx
