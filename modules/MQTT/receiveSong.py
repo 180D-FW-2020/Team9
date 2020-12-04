@@ -12,6 +12,7 @@ class MQTTReceiver:
         self.port = 1883
         self.topic = "/ECE180DA/Team9"
         self.client_id = 'python-mqtt'+str(random.randint(0, 1000))
+        self.command = ""
         self.songname = ""
         self.artistname = ""
         self.songtime = ""
@@ -29,13 +30,14 @@ class MQTTReceiver:
         return client
 
     def getSongParameters(self):
-        return [self.songname, self.artistname, self.songtime]
+        return [self.command, self.songname, self.artistname, self.songtime]
 
     def subscribe(self, client):
         def on_message(client, userdata, msg):
             print(
                 f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
             musicinfo = json.loads(msg.payload.decode())
+            self.command = musicinfo['command']
             self.songname = musicinfo['songname']
             self.artistname = musicinfo['artistname']
             self.songtime = musicinfo['songtime']
