@@ -1,16 +1,26 @@
 import speech_recognition as sr
+
+
 class Voice_Recognition:
     def __init__(self):
         # Command tells the music player what type of a command was entered by the user via an audio input
-        self.Command = ""
-        # CommandInfo is a list of additional fields that may be needed to perform the command
-        self.CommandInfo = []
+        self.command = ""
+        self.songname = ""
+        self.artistname = ""
+        # any possible time value that may be required to process the command
+        self.songtime = 0
 
-    def commandGet(self):
-        return self.Command
+    def getCommand(self):
+        return self.command
 
-    def commandInfoGet(self):
-        return self.CommandInfo
+    def getSongname(self):
+        return self.songname
+
+    def getArtistname(self):
+        return self.artistname
+
+    def getSongtime(self):
+        return self.songtime
 
     def speechGet(self):
         # print(sr.__version__)
@@ -30,10 +40,10 @@ class Voice_Recognition:
             wordsinput = strinput.split(" ")
             # check if command is play/pause
             if len(wordsinput) == 1 and wordsinput[0] == "pause":
-                self.Command = "Pause"
+                self.command = "Pause"
                 return
             if len(wordsinput) == 1 and wordsinput[0] == "play":
-                self.Command = "Play"
+                self.command = "Play"
                 return
             # now to check if the user asked to play a certain song
             playind = -1
@@ -46,7 +56,7 @@ class Voice_Recognition:
                     byind = i
             # if the command is of the format play ____ by ___
             if byind > playind + 1 and len(wordsinput) > byind + 1 and playind > -1:
-                self.Command = "InputSong"
+                self.command = "InputSong"
                 songname = ""
                 artistname = ""
                 for i in range(playind + 1, byind):
@@ -55,14 +65,17 @@ class Voice_Recognition:
                     artistname = artistname + wordsinput[i] + " "
                 songname = songname[:-1]
                 artistname = artistname[:-1]
-                self.CommandInfo = [songname, artistname]
+                self.songname = songname
+                self.artistname = artistname
+                self.songtime = 0
                 return
             # check if the command is of the format skip ___ seconds
             if len(wordsinput) == 3 and wordsinput[0] == 'skip' and wordsinput[2] == 'seconds':
-                self.Command = "SkipTime"
-                self.CommandInfo = [wordsinput[1]]
+                self.command = "SkipTime"
+                self.songname = ""
+                self.artistname = ""
+                self.songtime = wordsinput[1]
                 return
             # if no recognizable command is detected
-            self.Command = "Error"
-            self.CommandInfo = [strinput]
+            self.command = "Error"
             return

@@ -8,14 +8,15 @@ import time
 
 class MQTTReceiver:
     def __init__(self):
-        self.broker = 'mqtt.eclipse.org'
+        #self.broker = 'mqtt.eclipse.org'
+        self.broker = 'broker.emqx.io'
         self.port = 1883
         self.topic = "/ECE180DA/Team9"
         self.client_id = 'python-mqtt'+str(random.randint(0, 1000))
         self.command = ""
         self.songname = ""
         self.artistname = ""
-        self.songtime = ""
+        self.songtime = 0
 
     def connect_mqtt(self):
         def on_connect(client, userdata, flags, rc):
@@ -29,8 +30,17 @@ class MQTTReceiver:
         client.connect(self.broker, self.port)
         return client
 
-    def getSongParameters(self):
-        return [self.command, self.songname, self.artistname, self.songtime]
+    def getCommand(self):
+        return self.command
+
+    def getSongname(self):
+        return self.songname
+
+    def getArtistname(self):
+        return self.artistname
+
+    def getSongtime(self):
+        return self.songtime
 
     def subscribe(self, client):
         def on_message(client, userdata, msg):

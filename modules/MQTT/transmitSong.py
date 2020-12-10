@@ -1,5 +1,5 @@
 # Author: Karunesh Sachanandani
-# To be used in conjunction with transmit() in music_player/gui_music_player.py
+# To be used in conjunction with transmit() in gui_music_player.py
 import time
 import random
 import json
@@ -8,7 +8,8 @@ from paho.mqtt import client as mqtt_client
 
 class MQTTTransmitter:
     def __init__(self):
-        self.broker = 'mqtt.eclipse.org'
+        #self.broker = 'mqtt.eclipse.org'
+        self.broker = 'broker.emqx.io'
         self.port = 1883
         self.topic = "/ECE180DA/Team9"
         self.client_id = 'python-mqtt'+str(random.randint(0, 1000))
@@ -28,10 +29,16 @@ class MQTTTransmitter:
         client.connect(self.broker, self.port)
         return client
 
-    def setSongParameters(self, command, songname, artistname, songtime):
+    def setCommand(self, command):
         self.command = command
+
+    def setSongname(self, songname):
         self.songname = songname
+
+    def setArtistname(self, artistname):
         self.artistname = artistname
+
+    def setSongtime(self, songtime):
         self.songtime = songtime
 
     def publish(self, client):
