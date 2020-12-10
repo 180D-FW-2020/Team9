@@ -2,6 +2,8 @@
 
 Download my trained model here: https://drive.google.com/file/d/1VJoP6Fv4rEy8nEEUUaRdKUpaJLoQ08lC/view?usp=sharing
 
+Library of songs here: https://drive.google.com/drive/folders/1y39AhN18e-TeKhVm2jMLDValoCtHx5-3?usp=sharing
+
 ## Introduction
 
 This project aims to classify the emotion on a person's face into one of **seven categories**, using deep convolutional neural networks. The model is trained on the **FER-2013** dataset which was published on International Conference on Machine Learning (ICML). This dataset consists of 35887 grayscale, 48x48 sized face images with **seven emotions** - angry, disgusted, fearful, happy, neutral, sad and surprised.
