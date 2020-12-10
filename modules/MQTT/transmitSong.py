@@ -13,9 +13,9 @@ class MQTTTransmitter:
         self.port = 1883
         self.topic = "/ECE180DA/Team9"
         self.client_id = 'python-mqtt'+str(random.randint(0, 1000))
-        self.command = ""
-        self.songname = ""
-        self.artistname = ""
+        self.command = None
+        self.songname = None
+        self.artistname = None
         self.songtime = 0
 
     def connect_mqtt(self):

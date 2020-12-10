@@ -204,10 +204,8 @@ class FrameApp(Frame):
         self.transmitter.setSongname(songname)
         self.transmitter.setArtistname(artistname)
         self.transmitter.setSongtime(songtime)
-        if self.player.is_playing():
-            self.transmitter.setCommand("PlaySong")
-        else:
-            self.transmitter.setCommand("PauseSong")
+        self.transmitter.setCommand("INPUTSONG")
+
         client = self.transmitter.connect_mqtt()
         client.loop_start()
         self.transmitter.publish(client)
@@ -226,11 +224,24 @@ class FrameApp(Frame):
         command = self.receiver.getCommand()
         songname = self.receiver.getSongname()
         artistname = self.receiver.getArtistname()
-        songtime = self.receiver.getSongtime()
+        songtime = int(self.receiver.getSongtime())
         print(str(command) + ", " + str(songname) + ", " +
               str(artistname) + ", " + str(songtime))
-        # if command == "PlaySong":
-        #	self.play_song(songname, artist=artistname, start_time=int(songtime))
+
+        #Python has no switch statements, I could use a dict, but we can talk about this later
+        if command == "INPUTSONG":
+        	self.play_song(songname, artist=artistname, start_time=int(songtime))
+        elif command == "PLAY":
+            self.play()
+        elif command == "PAUSE":
+            self.pause()
+        elif command == "TOGGLE":
+            self.play_pause_music()
+        elif command == "SKIPTIME":
+            self.skip_time(int(songtime)*1000) #time to skip is in ms
+        else: #command not recognized
+            print("Command not Recognized!")
+
 
     def play_song(self, title, artist=None, start_time=0):
         """
@@ -279,6 +290,10 @@ class FrameApp(Frame):
 
         print("Title: %s Artist: %s Time: %.2fsec" %
               (curr_title, curr_artist, curr_time/1000))
+    
+    def skip_time(self, time_to_skip=5000): #time to skip in ms
+        current_time = self.player.get_time()
+        self.player.set_time(current_time + time_to_skip)
 
 
 class ttkTimer(Thread):

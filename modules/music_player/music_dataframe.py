@@ -83,10 +83,12 @@ class Music_Dataframe:
         """
 
         if artist != None:
-            matching_songs = self.Music.loc[(self.Music['artist'] == artist) & (self.Music['title'] == title)]
+            bool_matching_songs = self.Music['artist'].str.contains(artist, na=False, case=False) \
+                 & self.Music['title'].str.contains(title, na=False, case=False)
         else:
-            matching_songs = self.Music.loc[(self.Music['title'] == title)]
+            bool_matching_songs = self.Music['artist'].str.contains(artist, na=False, case=False)
         
+        matching_songs = self.Music[bool_matching_songs]
         num_matches = matching_songs.shape[0]
 
         if num_matches == 0:
