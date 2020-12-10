@@ -1,10 +1,15 @@
-This program  reads the angles from the acceleromter, gyrscope
-and mangnetometer on a BerryIMU connected to a Raspberry Pi.
+This program  reads from the acceleromter, gyrscope
+on a BerryIMU connected to a Raspberry Pi.
 
+Main file name: 
+python3 gesture.py
 
-This program includes two filters (low pass and median) to improve the
-values returned from BerryIMU by reducing noise.
+command variable is the output
 
+Returns into IMUCommand.json file:
+TOGGLE => Play or Pause Song
+NEXT => Next Song
+PREV => Previous Song
 
 http://ozzmaker.com/berryimu
 
@@ -14,13 +19,7 @@ BerryIMUv1 uses LSM9DS0 IMU
 BerryIMUv2 uses LSM9DS1 IMU
 BerryIMUv3 uses LSM6DSL and LIS3MDL
 
-
-Python2 and Python3 supported by this script
-
-Python2;
-Run using;
-python berryIMU.py
-python calibrateBerryIMU.py
+Python3 supported by this script
 
 Python3;
 Run using;

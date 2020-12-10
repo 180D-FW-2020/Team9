@@ -4,6 +4,7 @@ import math
 import IMU
 import datetime
 import os
+import json
 
 ### IMPORTANT ###
 #Make sure that this file location is put into the directory below
@@ -45,57 +46,7 @@ Dont use the above values, these are just an example.
 '''
 ############### END Calibration offsets #################
 
-
-#Kalman filter variables
-Q_angle = 0.02
-Q_gyro = 0.0015
-R_angle = 0.005
-y_bias = 0.0
-x_bias = 0.0
-XP_00 = 0.0
-XP_01 = 0.0
-XP_10 = 0.0
-XP_11 = 0.0
-YP_00 = 0.0
-YP_01 = 0.0
-YP_10 = 0.0
-YP_11 = 0.0
-KFangleX = 0.0
-KFangleY = 0.0
-
-gyroXangle = 0.0
-gyroYangle = 0.0
-gyroZangle = 0.0
-CFangleX = 0.0
-CFangleY = 0.0
-CFangleXFiltered = 0.0
-CFangleYFiltered = 0.0
-kalmanX = 0.0
-kalmanY = 0.0
-oldXMagRawValue = 0
-oldYMagRawValue = 0
-oldZMagRawValue = 0
-oldXAccRawValue = 0
-oldYAccRawValue = 0
-oldZAccRawValue = 0
-
 a = datetime.datetime.now()
-
-
-
-#Setup the tables for the mdeian filter. Fill them all with '1' so we dont get devide by zero error
-acc_medianTable1X = [1] * ACC_MEDIANTABLESIZE
-acc_medianTable1Y = [1] * ACC_MEDIANTABLESIZE
-acc_medianTable1Z = [1] * ACC_MEDIANTABLESIZE
-acc_medianTable2X = [1] * ACC_MEDIANTABLESIZE
-acc_medianTable2Y = [1] * ACC_MEDIANTABLESIZE
-acc_medianTable2Z = [1] * ACC_MEDIANTABLESIZE
-mag_medianTable1X = [1] * MAG_MEDIANTABLESIZE
-mag_medianTable1Y = [1] * MAG_MEDIANTABLESIZE
-mag_medianTable1Z = [1] * MAG_MEDIANTABLESIZE
-mag_medianTable2X = [1] * MAG_MEDIANTABLESIZE
-mag_medianTable2Y = [1] * MAG_MEDIANTABLESIZE
-mag_medianTable2Z = [1] * MAG_MEDIANTABLESIZE
 
 IMU.detectIMU()     #Detect if BerryIMU is connected.
 if(IMU.BerryIMUversion == 99):
@@ -107,6 +58,7 @@ pastGYRx = 0
 pastGYRz = 0
 count = 0
 command = "NONE"
+out = json.dumps(command)
 
 while True:
 
@@ -117,16 +69,9 @@ while True:
     GYRx = IMU.readGYRx()
     GYRy = IMU.readGYRy()
     GYRz = IMU.readGYRz()
-    MAGx = IMU.readMAGx()
-    MAGy = IMU.readMAGy()
-    MAGz = IMU.readMAGz()
-
-
-    #Apply compass calibration
-    MAGx -= (magXmin + magXmax) /2
-    MAGy -= (magYmin + magYmax) /2
-    MAGz -= (magZmin + magZmax) /2
-
+    #MAGx = IMU.readMAGx()
+    #MAGy = IMU.readMAGy()
+    #MAGz = IMU.readMAGz()
 
     ##Calculate loop Period(LP). How long between Gyro Reads
     b = datetime.datetime.now() - a
@@ -146,21 +91,25 @@ while True:
 
     if command != "NONE" :
         command = "NONE"
+        with open("IMUCommand.json", "w") as write_file:
+                json.dump(command, write_file)
 
     if diffGYRx > 1800 :    #read clockwise hand motion
         #print(diffGYRx)
-        time.sleep(0.35)            #delay for counter clockwise hand motion		.35
+        time.sleep(0.35)            #delay for counter clockwise hand motion        .35
         GYRxTemp = IMU.readGYRx()   #read 
         diffTempn = GYRx - GYRxTemp
         #print(diffTemp)
         if diffTempn < -5000 :     #check for counter clockwise motion
             #print("Next Song")
             command = "NEXT"             #the output command for Next Song
+            with open("IMUCommand.json", "w") as write_file:
+                json.dump(command, write_file)
             #print(command)
             time.sleep(.9)
     if diffGYRx < -2000 :
         #print(diffGYRx)
-        time.sleep(0.35)            #delay for counter clockwise hand motion		.35
+        time.sleep(0.35)            #delay for counter clockwise hand motion        .35
         GYRxTemp = IMU.readGYRx()   #read 
         diffTempp = GYRx - GYRxTemp
         #print(diffTempp)
@@ -168,24 +117,25 @@ while True:
             #print("Previous Song")
             command = "PREV"             #the output command for Previous Song
             #print(command)
+            with open("IMUCommand.json", "w") as write_file:
+                json.dump(command, write_file)
             time.sleep(.9)
     if diffGYRz > 2000 :
         #print(diffGYRz)
-    	time.sleep(0.4)
-    	GYRzTemp = IMU.readGYRz()
-    	#print(GYRzTemp)
-    	diffTemps = GYRz - GYRzTemp
+        time.sleep(0.4)
+        GYRzTemp = IMU.readGYRz()
+        #print(GYRzTemp)
+        diffTemps = GYRz - GYRzTemp
         #print(diffTemp)
-    	if diffTemps < -5000 :
-        	#print("Play Song/Pause Song")
-            command = "PP"      #the output command for play and pause
+        if diffTemps < -5000 :
+            #print("Play Song/Pause Song")
+            command = "TOGGLE"      #the output command for play and pause
             #print(command)
+            with open("IMUCommand.json", "w") as write_file:
+                json.dump(command, write_file)
             time.sleep(.9)
-
 
     pastGYRx = GYRx
 
     time.sleep(0.2)
 
-
-    #needs files from the berry.IMU that i will post later
