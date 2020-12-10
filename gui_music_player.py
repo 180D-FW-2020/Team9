@@ -13,6 +13,7 @@ import os
 from modules.MQTT.transmitSong import MQTTTransmitter
 from modules.MQTT.receiveSong import MQTTReceiver
 
+
 class FrameApp(Frame):
     def __init__(self, parent):
         super(FrameApp, self).__init__(parent)
@@ -73,13 +74,14 @@ class FrameApp(Frame):
         # Progress Bar
         self.scale_var = DoubleVar()
         self.timeslider_last_val = ""
-        self.timeslider = Scale(self, variable=self.scale_var, 
-                from_=0, to=1000, orient=HORIZONTAL, length=500)
-        self.timeslider.bind("<ButtonRelease-1>", self.scale_sel) #Update only on Button Release
+        self.timeslider = Scale(self, variable=self.scale_var,
+                                from_=0, to=1000, orient=HORIZONTAL, length=500)
+        # Update only on Button Release
+        self.timeslider.bind("<ButtonRelease-1>", self.scale_sel)
         self.timeslider.grid(row=10, column=0)
 
         self.timer = ttkTimer(self.OnTimer, 1.0)
-        self.timer.start() #start Thread
+        self.timer.start()  # start Thread
 
     def OnTimer(self):
         """Update the time slider according to the current movie time.
@@ -190,7 +192,7 @@ class FrameApp(Frame):
         Whatever function we want to test
         """
         self.print_current_song_info()
-        
+
     def transmit(self):
         """
         Transmit song data via MQTT
@@ -199,7 +201,13 @@ class FrameApp(Frame):
         songname = song_metadata.title
         artistname = song_metadata.artist
 
-        self.transmitter.setSongParameters(songname, artistname, songtime)
+        self.transmitter.setSongname(songname)
+        self.transmitter.setArtistname(artistname)
+        self.transmitter.setSongtime(songtime)
+        if self.player.is_playing():
+            self.transmitter.setCommand("PlaySong")
+        else:
+            self.transmitter.setCommand("PauseSong")
         client = self.transmitter.connect_mqtt()
         client.loop_start()
         self.transmitter.publish(client)
@@ -213,12 +221,16 @@ class FrameApp(Frame):
         self.receiver.subscribe(client)
         client.loop_start()
         time.sleep(0.5)
-	#without the above pause, the program doesn't have enough time to subscribe and pick up the song info before the comm link is ended
+        # without the above pause, the program doesn't have enough time to subscribe and pick up the song info before the comm link is ended
         client.loop_stop()
-        [songname, artistname, songtime] = self.receiver.getSongParameters()
-        print(str(songname) + ", " + str(artistname) + ", " + str(songtime))
-
-        self.play_song(songname, artist=artistname, start_time=int(songtime))
+        command = self.receiver.getCommand()
+        songname = self.receiver.getSongname()
+        artistname = self.receiver.getArtistname()
+        songtime = self.receiver.getSongtime()
+        print(str(command) + ", " + str(songname) + ", " +
+              str(artistname) + ", " + str(songtime))
+        # if command == "PlaySong":
+        #	self.play_song(songname, artist=artistname, start_time=int(songtime))
 
     def play_song(self, title, artist=None, start_time=0):
         """
@@ -234,10 +246,12 @@ class FrameApp(Frame):
             print("Song Not Found!")
             return
         else:
-            played = self.player.play_song_from_current_playlist(song_path, start_time=start_time)
+            played = self.player.play_song_from_current_playlist(
+                song_path, start_time=start_time)
             if not played:  # song not in playlist or can't play for some reason
                 self.set_playlist_as_random_playlist()  # random playlist of ALL songs
-                played = self.player.play_song_from_current_playlist(song_path, start_time=start_time)
+                played = self.player.play_song_from_current_playlist(
+                    song_path, start_time=start_time)
 
                 if not played:
                     print("Error playing the song in the player")
@@ -266,9 +280,11 @@ class FrameApp(Frame):
         print("Title: %s Artist: %s Time: %.2fsec" %
               (curr_title, curr_artist, curr_time/1000))
 
+
 class ttkTimer(Thread):
     """a class serving same function as wxTimer... but there may be better ways to do this
     """
+
     def __init__(self, callback, tick):
         Thread.__init__(self)
         self.callback = callback
@@ -297,6 +313,7 @@ def _quit():
     root.destroy()  # this is necessary on Windows to prevent
     # Fatal Python Error: PyEval_RestoreThread: NULL tstate
     os._exit(1)
+
 
 if __name__ == '__main__':
     root = Tk()
