@@ -20,17 +20,27 @@ There are 2 programs for this project: Music Player and Controller.
 - python-vlc (pip install python-vlc)
 - pafy (pip install pafy)
 - youtube-dl (pip install youtube_dl)
+- Youtube-Search (pip install youtube-search)
+- TinyTag (pip install tinytag)
+- Pandas (pip install pandas)
 
 **Controller:** (*try installing with conda before pip*)
 - Python3 [Download Python](https://www.python.org/downloads/)
-- Anaconda or Miniconda 
+- Anaconda or Miniconda (Package Manger)
 - OpenCV 
 - paho-mqtt
+- PyAudio (pip install PyAudio)
+- Speech_Recognition (pip install SpeechRecognition)
+
+**Mood Detection:**
+- Python3
+- Numpy
+- OpenCV
+- Tensorflow
 
 ### Issues <a name="subparagraph1"></a>
 Current Known Issues:
-Package Manager may have difficulty locating libvlc.dll. Fixes to this will be posted soon.
-
+Package Manager may have difficulty locating libvlc.dll. If this is the case, please run the same version (32-bit or 64-bit) Python as on the VLC 
 
 ## Others <a name="paragraph2"></a>
 Any updates regarding setup will be updated on this README

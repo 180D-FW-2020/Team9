@@ -75,3 +75,34 @@ class Music_Dataframe:
     def size(self):
         return self.Music.shape[0]
 
+    def find_song(self, title: str, artist=None):
+        """
+        Returns path (string) of the song if the song with same title is found in the database.
+        If only title is given, only title is used for query; otherwise, both title and artist is used for query.
+        It returns first entry if there are any non-zero number of matching entries, None otherwise.
+        """
+
+        if artist != None:
+            matching_songs = self.Music.loc[(self.Music['artist'] == artist) & (self.Music['title'] == title)]
+        else:
+            matching_songs = self.Music.loc[(self.Music['title'] == title)]
+        
+        num_matches = matching_songs.shape[0]
+
+        if num_matches == 0:
+            return None
+        else:
+            return matching_songs.iloc[0]['path']
+
+    def get_metadata_tag(self, song_path):
+        """
+        Returns tag(metadata) of song given the song path.
+        Returns None if not found
+        """
+        try:
+            ret_tag = self.tags[song_path]
+        except KeyError:
+            return None
+
+        return ret_tag
+

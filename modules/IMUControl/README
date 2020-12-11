@@ -1,0 +1,27 @@
+This program  reads from the acceleromter, gyrscope
+on a BerryIMU connected to a Raspberry Pi.
+
+Main file name: 
+python3 gesture.py
+
+command variable is the output
+
+Returns into IMUCommand.json file:
+TOGGLE => Play or Pause Song
+NEXT => Next Song
+PREV => Previous Song
+
+http://ozzmaker.com/berryimu
+
+The BerryIMUv1, BerryIMUv2 and BerryIMUv3 are supported
+
+BerryIMUv1 uses LSM9DS0 IMU
+BerryIMUv2 uses LSM9DS1 IMU
+BerryIMUv3 uses LSM6DSL and LIS3MDL
+
+Python3 supported by this script
+
+Python3;
+Run using;
+python3 berryIMU.py
+python3 calibrateBerryIMU.py
