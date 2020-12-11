@@ -131,7 +131,7 @@ elif mode == "display":
             if maxindex >= 0 and maxindex <=6:
                 sys.exit(emotion_dict[maxindex])
             else:
-                sys.exit(0)
+                sys.exit(-1)
 
         cv2.imshow('Video', cv2.resize(frame,(1600,960),interpolation = cv2.INTER_CUBIC))
         if cv2.waitKey(1) & 0xFF == ord('q'):
