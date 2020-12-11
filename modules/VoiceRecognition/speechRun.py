@@ -1,8 +1,9 @@
 # Author: Karunesh Sachanandani
 # run this if you want to enter a voice command
-# run with "python -m VoiceRecognition.speecRun" in /modules/
+# run with "python -m VoiceRecognition.speechRun" in /modules/ (For now!)
 from MQTT.transmitSong import MQTTTransmitter
 from VoiceRecognition.speechGet import Voice_Recognition
+print("Please enter your voice command")
 voiceInstance = Voice_Recognition()
 transmitterInstance = MQTTTransmitter()
 voiceInstance.speechGet()

@@ -4,9 +4,9 @@ import speech_recognition as sr
 class Voice_Recognition:
     def __init__(self):
         # Command tells the music player what type of a command was entered by the user via an audio input
-        self.command = ""
-        self.songname = ""
-        self.artistname = ""
+        self.command = None
+        self.songname = None
+        self.artistname = None
         # any possible time value that may be required to process the command
         self.songtime = 0
 
@@ -40,10 +40,10 @@ class Voice_Recognition:
             wordsinput = strinput.split(" ")
             # check if command is play/pause
             if len(wordsinput) == 1 and wordsinput[0] == "pause":
-                self.command = "Pause"
+                self.command = "PAUSE"
                 return
             if len(wordsinput) == 1 and wordsinput[0] == "play":
-                self.command = "Play"
+                self.command = "PLAY"
                 return
             # now to check if the user asked to play a certain song
             playind = -1
@@ -56,7 +56,7 @@ class Voice_Recognition:
                     byind = i
             # if the command is of the format play ____ by ___
             if byind > playind + 1 and len(wordsinput) > byind + 1 and playind > -1:
-                self.command = "InputSong"
+                self.command = "INPUTSONG"
                 songname = ""
                 artistname = ""
                 for i in range(playind + 1, byind):
@@ -71,11 +71,9 @@ class Voice_Recognition:
                 return
             # check if the command is of the format skip ___ seconds
             if len(wordsinput) == 3 and wordsinput[0] == 'skip' and wordsinput[2] == 'seconds':
-                self.command = "SkipTime"
-                self.songname = ""
-                self.artistname = ""
+                self.command = "SKIPTIME"
                 self.songtime = wordsinput[1]
                 return
             # if no recognizable command is detected
-            self.command = "Error"
+            self.command = "ERROR"
             return
