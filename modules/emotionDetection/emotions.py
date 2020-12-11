@@ -129,7 +129,7 @@ elif mode == "display":
             cv2.putText(frame, emotion_dict[maxindex], (x+20, y-60), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             # print(emotion_dict[maxindex])
             if maxindex >= 0 and maxindex <=6:
-                sys.exit(emotion_dict[maxindex])
+                sys.exit(maxindex)
             else:
                 sys.exit(-1)
 
