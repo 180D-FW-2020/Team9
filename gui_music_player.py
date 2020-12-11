@@ -239,6 +239,10 @@ class FrameApp(Frame):
             self.play_pause_music()
         elif command == "SKIPTIME":
             self.skip_time(int(songtime)*1000) #time to skip is in ms
+        elif command == "NEXT":
+            self.next_song()
+        elif command == "PREV":
+            self.previous_song()
         else: #command not recognized
             print("Command not Recognized!")
 
