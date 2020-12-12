@@ -104,7 +104,7 @@ while True:
         diffTemps = GYRz - GYRzTemp
         if diffTemps < -5000 :
             command = "TOGGLE"      #the output command for play and pause
-            print(command)
+            #print(command)
             sendIMU(command)
             time.sleep(.9)
 
