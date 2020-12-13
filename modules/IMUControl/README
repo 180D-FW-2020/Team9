@@ -6,13 +6,8 @@ python3 gesture.py
 
 command variable is the output
 
-<<<<<<< HEAD
-Returns into IMUCommand.json file:
+Sends to IMUCommand MQTT
 TOGGLE => Play or Pause Song
-=======
-Returns:
-PP => Play or Pause Song
->>>>>>> f6debd909ddb6941dd86c0cea4a33bcb13057cb4
 NEXT => Next Song
 PREV => Previous Song
 
