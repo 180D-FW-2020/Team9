@@ -64,20 +64,8 @@ model.add(Dense(1024, activation='relu'))
 model.add(Dropout(0.5))
 model.add(Dense(7, activation='softmax'))
 
-# If you want to train the same model or try other models, go for this
-if mode == "train":
-    model.compile(loss='categorical_crossentropy',optimizer=Adam(lr=0.0001, decay=1e-6),metrics=['accuracy'])
-    model_info = model.fit_generator(
-            train_generator,
-            steps_per_epoch=num_train // batch_size,
-            epochs=num_epoch,
-            validation_data=validation_generator,
-            validation_steps=num_val // batch_size)
-    plot_model_history(model_info)
-    model.save_weights('model.h5')
-
 # emotions will be displayed on your face from the webcam feed
-elif mode == "display":
+if mode == "display":
 
     abs_dir = str(pathlib.Path(__file__).parent.absolute()) + "/"
     model.load_weights(abs_dir + 'model.h5')
