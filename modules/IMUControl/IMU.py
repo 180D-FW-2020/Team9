@@ -1,11 +1,10 @@
 import smbus
 bus = smbus.SMBus(1)
-from LSM9DS0 import *
-from LSM9DS1 import *
-from LSM6DSL import *
-from LIS3MDL import *
+from IMUControl.LSM9DS0 import *
+from IMUControl.LSM9DS1 import *
+from IMUControl.LSM6DSL import *
+from IMUControl.LIS3MDL import *
 import time
-
 
 
 

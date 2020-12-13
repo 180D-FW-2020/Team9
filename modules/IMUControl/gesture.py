@@ -1,10 +1,10 @@
 import sys
 import time
 import math
-import IMU
+import IMUControl.IMU
 import datetime
 import os
-import json
+from MQTT.transmitSong import MQTTTransmitter
 
 ### IMPORTANT ###
 #Make sure that this file location is put into the directory below
@@ -21,11 +21,6 @@ MAG_MEDIANTABLESIZE = 9         # Median filter table size for magnetometer. Hig
 ACCxpast = 0
 ACCzpast = 0
 
-################# Compass Calibration values ############
-# Use calibrateBerryIMU.py to get calibration values
-# Calibrating the compass isnt mandatory, however a calibrated
-# compass will result in a more accurate heading value.
-
 magXmin =  -2372
 magYmin =  -4110
 magZmin =  4386
@@ -34,51 +29,43 @@ magYmax =  -1303
 magZmax =  4506
 
 
-'''
-Here is an example:
-magXmin =  -1748
-magYmin =  -1025
-magZmin =  -1876
-magXmax =  959
-magYmax =  1651
-magZmax =  708
-Dont use the above values, these are just an example.
-'''
-############### END Calibration offsets #################
-
 a = datetime.datetime.now()
 
-IMU.detectIMU()     #Detect if BerryIMU is connected.
-if(IMU.BerryIMUversion == 99):
+IMUControl.IMU.detectIMU()     #Detect if BerryIMU is connected.
+if(IMUControl.IMU.BerryIMUversion == 99):
     print(" No BerryIMU found... exiting ")
     sys.exit()
-IMU.initIMU()       #Initialise the accelerometer, gyroscope and compass
+IMUControl.IMU.initIMU()       #Initialise the accelerometer, gyroscope and compass
 
 pastGYRx = 0
 pastGYRz = 0
 count = 0
 command = "NONE"
-out = json.dumps(command)
+transmitterInstance = MQTTTransmitter()
+
+    
+def sendIMU(command):
+    transmitterInstance.setCommand(command)
+    client = transmitterInstance.connect_mqtt()
+    client.loop_start()
+    transmitterInstance.publish(client)
+    client.loop_stop()
 
 while True:
 
     #Read the accelerometer,gyroscope and magnetometer values
-    ACCx = IMU.readACCx()
-    ACCy = IMU.readACCy()
-    ACCz = IMU.readACCz()
-    GYRx = IMU.readGYRx()
-    GYRy = IMU.readGYRy()
-    GYRz = IMU.readGYRz()
-    #MAGx = IMU.readMAGx()
-    #MAGy = IMU.readMAGy()
-    #MAGz = IMU.readMAGz()
+    #ACCx = IMU.readACCx()
+    #ACCy = IMU.readACCy()
+    #ACCz = IMU.readACCz()
+    GYRx = IMUControl.IMU.readGYRx()
+    GYRy = IMUControl.IMU.readGYRy()
+    GYRz = IMUControl.IMU.readGYRz()
 
     ##Calculate loop Period(LP). How long between Gyro Reads
     b = datetime.datetime.now() - a
     a = datetime.datetime.now()
     LP = b.microseconds/(1000000*1.0)
     outputString = "Loop Time %5.2f " % ( LP )
-
 
     ##################### END Tilt Compensation ########################
 
@@ -91,48 +78,34 @@ while True:
 
     if command != "NONE" :
         command = "NONE"
-        with open("IMUCommand.json", "w") as write_file:
-                json.dump(command, write_file)
+        #print(command)
 
     if diffGYRx > 1800 :    #read clockwise hand motion
-        #print(diffGYRx)
         time.sleep(0.35)            #delay for counter clockwise hand motion        .35
-        GYRxTemp = IMU.readGYRx()   #read 
+        GYRxTemp = IMUControl.IMU.readGYRx()   #read 
         diffTempn = GYRx - GYRxTemp
-        #print(diffTemp)
         if diffTempn < -5000 :     #check for counter clockwise motion
-            #print("Next Song")
             command = "NEXT"             #the output command for Next Song
-            with open("IMUCommand.json", "w") as write_file:
-                json.dump(command, write_file)
             #print(command)
+            sendIMU(command)
             time.sleep(.9)
     if diffGYRx < -2000 :
-        #print(diffGYRx)
         time.sleep(0.35)            #delay for counter clockwise hand motion        .35
-        GYRxTemp = IMU.readGYRx()   #read 
+        GYRxTemp = IMUControl.IMU.readGYRx()   #read 
         diffTempp = GYRx - GYRxTemp
-        #print(diffTempp)
         if diffTempp > 4500 :     #check for counter clockwise motion
-            #print("Previous Song")
             command = "PREV"             #the output command for Previous Song
             #print(command)
-            with open("IMUCommand.json", "w") as write_file:
-                json.dump(command, write_file)
+            sendIMU(command)
             time.sleep(.9)
     if diffGYRz > 2000 :
-        #print(diffGYRz)
         time.sleep(0.4)
-        GYRzTemp = IMU.readGYRz()
-        #print(GYRzTemp)
+        GYRzTemp = IMUControl.IMU.readGYRz()
         diffTemps = GYRz - GYRzTemp
-        #print(diffTemp)
         if diffTemps < -5000 :
-            #print("Play Song/Pause Song")
             command = "TOGGLE"      #the output command for play and pause
             #print(command)
-            with open("IMUCommand.json", "w") as write_file:
-                json.dump(command, write_file)
+            sendIMU(command)
             time.sleep(.9)
 
     pastGYRx = GYRx

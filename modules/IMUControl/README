@@ -6,7 +6,7 @@ python3 gesture.py
 
 command variable is the output
 
-Returns into IMUCommand.json file:
+Sends to IMUCommand MQTT
 TOGGLE => Play or Pause Song
 NEXT => Next Song
 PREV => Previous Song
@@ -25,3 +25,5 @@ Python3;
 Run using;
 python3 berryIMU.py
 python3 calibrateBerryIMU.py
+
+
