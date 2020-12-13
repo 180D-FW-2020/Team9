@@ -10,6 +10,8 @@ import time
 from threading import Timer, Thread, Event
 import os
 
+import subprocess
+
 from modules.MQTT.transmitSong import MQTTTransmitter
 from modules.MQTT.receiveSong import MQTTReceiver
 
@@ -23,6 +25,9 @@ class FrameApp(Frame):
         self.df_songs = Music_Dataframe()
         self.transmitter = MQTTTransmitter()
         self.receiver = MQTTReceiver()
+
+        self.emotion = 4
+        self.emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful", 3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
 
         self.button_play_pause = Button(
             self, text="Play/Pause", command=self.play_pause_music, width=20)
@@ -44,7 +49,7 @@ class FrameApp(Frame):
                                        width=20)
         self.button_add_songs.grid(row=5, column=0)
 
-        self.button_add_songs = Button(self, text="Random Playlist", command=self.set_playlist_as_random_playlist,
+        self.button_add_songs = Button(self, text="Random Playlist", command=self.play_random_playlist,
                                        width=20)
         self.button_add_songs.grid(row=6, column=0)
 
@@ -60,8 +65,20 @@ class FrameApp(Frame):
                                   width=20)
         self.button_test.grid(row=9, column=0)
 
+        self.button_emotion_detection = Button(
+            self, text="Detect Emotion!", command=self.detect_user_emotion, width=20)
+        self.button_emotion_detection.grid(row=10, column=0)
+
+        self.export_csv = Button(
+            self, text="Export Smartify Data", command=self.export_csv, width=20)
+        self.export_csv.grid(row=11, column=0)
+
+        self.import_csv = Button(
+            self, text="Import Smartify Data", command=self.import_csv, width=20)
+        self.import_csv.grid(row=12, column=0)
+
         self.label1 = Label(self)
-        self.label1.grid(row=11, column=0)
+        self.label1.grid(row=14, column=0)
 
         # TODO: Make progressbar, delete songs from playlist, amplify volume
 
@@ -78,7 +95,7 @@ class FrameApp(Frame):
                                 from_=0, to=1000, orient=HORIZONTAL, length=500)
         # Update only on Button Release
         self.timeslider.bind("<ButtonRelease-1>", self.scale_sel)
-        self.timeslider.grid(row=10, column=0)
+        self.timeslider.grid(row=13, column=0)
 
         self.timer = ttkTimer(self.OnTimer, 1.0)
         self.timer.start()  # start Thread
@@ -168,9 +185,10 @@ class FrameApp(Frame):
     def check_music(self):
         pass
 
-    def set_playlist_as_random_playlist(self):
+    def play_random_playlist(self):
         random_playlist = self.create_random_playlist()
         self.player.addPlaylist(random_playlist)
+        self.player.play()
 
     def create_random_playlist(self) -> list:
         """
@@ -298,6 +316,62 @@ class FrameApp(Frame):
     def skip_time(self, time_to_skip=5000): #time to skip in ms
         current_time = self.player.get_time()
         self.player.set_time(current_time + time_to_skip)
+
+    def detect_user_emotion(self):
+        """
+        Opens a subprocess to detect emotion from user (from a webcam)
+        returns: nothing
+        """
+
+        #This currenty does freezes TK inter!
+        #Make it use Threads later (along with MQTT)
+
+        self.player.pause()
+
+        print("Please wait for our module to load...")
+        print("Please place your face near the camera.")
+
+        process = subprocess.Popen(["python", "./modules/emotionDetection/emotions.py", "--mode", "display"])
+        process.wait()
+        
+        self.emotion = process.returncode
+
+        print("Your Emotion is:", self.emotion_dict[self.emotion])
+        print("Recommending Songs based on your Emotion!")
+
+        self.play_emotion_playlist()
+
+    def play_emotion_playlist(self, num_songs=20):
+        """
+        Creates a random playlist of a song matching the emotions
+        With songs with matching emotion
+        If matching songs < num_songs, playlist will contain all matching songs
+        """
+
+        emotion_playlist = self.df_songs.find_emotion_songs(self.emotion)
+        random.shuffle(emotion_playlist)
+
+        if len(emotion_playlist) > num_songs:
+            emotion_playlist = emotion_playlist[:num_songs]
+
+        if len(emotion_playlist) == 0:
+            print("No songs matching your current emotion! Try adding more songs!")
+
+        self.player.addPlaylist(emotion_playlist)
+        self.player.play()
+
+    def export_csv(self):
+        """
+        Returns .csv of Dataframe
+        """
+        self.df_songs.export_csv(file_path="./Smartify_Data.csv")
+    
+    def import_csv(self):
+        """
+        Sets Dataframe values to equal the .csv file, if the columns are valid
+        """
+        df_file = askopenfile()
+        self.df_songs.import_csv(file_path=df_file)
 
 
 class ttkTimer(Thread):

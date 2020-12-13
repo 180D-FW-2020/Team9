@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+import random
 
 from tinytag import TinyTag
 
@@ -7,7 +8,8 @@ class Music_Dataframe:
     def __init__(self, path = None):
         """Creates a dataframe. If path is specified, it loads songs from path into dataframe."""
 
-        self.Music = pd.DataFrame(columns=['path', 'artist', 'title'])
+        self.Music_cols = ['path', 'artist', 'title', 'emotion']
+        self.Music = pd.DataFrame(columns=self.Music_cols)
         self.tags = dict()
         self.supported_format = [".mp3", ".wav"]
 
@@ -63,6 +65,8 @@ class Music_Dataframe:
                     current_music_data['title'] = tag.title
                     current_music_data['artist'] = tag.artist
 
+                    current_music_data['emotion'] = random.randint(0,6) #random emotion for each song
+
                     all_music_data.append(current_music_data)
                     self.tags[music_path] = tag
 
@@ -95,6 +99,14 @@ class Music_Dataframe:
             return None
         else:
             return matching_songs.iloc[0]['path']
+    
+    def find_emotion_songs(self, emotion):
+        """
+        returns list [] of paths (string) of songs that mach the emotion
+        """
+        matching_songs = self.Music.loc[self.Music['emotion'] == emotion]['path'].tolist()
+
+        return matching_songs
 
     def get_metadata_tag(self, song_path):
         """
@@ -108,3 +120,28 @@ class Music_Dataframe:
 
         return ret_tag
 
+    def export_csv(self, file_path="Smartify_Data.csv"):
+        """
+        Exports Dataframe as .csv to file_path
+        """
+        self.Music.to_csv(file_path,index=False)
+
+    def import_csv(self, file_path):
+        """
+        Imports Dataframe as .csv from file_path if valid
+        And sets self.tag to Tags of paths from .csv file
+        Otherwise, it does nothing (prints message)
+        """
+        temp_df = pd.read_csv(file_path)
+        col_list = temp_df.columns.tolist()
+
+        if col_list != self.Music_cols: #do nothing if columsn don't match
+           return
+        else:
+            self.Music = temp_df
+
+        #get all tags
+        song_paths = self.Music['path'].tolist()
+        for music_path in song_paths:
+            tag = TinyTag.get(music_path)
+            self.tags[music_path] = tag
