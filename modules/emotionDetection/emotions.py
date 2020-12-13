@@ -75,6 +75,9 @@ if mode == "display":
 
     # dictionary which assigns each label an emotion (alphabetical order)
     emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful", 3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
+    
+    # create emotion array to keep track of emotions
+    emotionArray = []
 
     # start the webcam feed
     cap = cv2.VideoCapture(0)
@@ -94,13 +97,11 @@ if mode == "display":
             prediction = model.predict(cropped_img)
             maxindex = int(np.argmax(prediction))
             cv2.putText(frame, emotion_dict[maxindex], (x+20, y-60), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-
-            # print(emotion_dict[maxindex])
-            if maxindex >= 0 and maxindex <=6:
-                sys.exit(maxindex)
-            else:
-                sys.exit(-1)
-
+            print(emotion_dict[maxindex])
+            emotionArray.append(maxindex)
+            for i in range(len(emotionArray) - 2):  
+                if emotionArray[i] == emotionArray[i + 1] and emotionArray[i + 1] == emotionArray[i + 2]:
+                    sys.exit(emotionArray[i])
 
         cv2.imshow('Video', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
