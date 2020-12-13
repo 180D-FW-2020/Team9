@@ -1,3 +1,6 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' #ignore all warnings (everything but error)
+
 import numpy as np
 import argparse
 import matplotlib.pyplot as plt
@@ -8,9 +11,9 @@ from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-import os
 import sys
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+import pathlib
+
 
 # command line argument
 ap = argparse.ArgumentParser()
@@ -41,32 +44,6 @@ def plot_model_history(model_history):
     axs[1].legend(['train', 'val'], loc='best')
     fig.savefig('plot.png')
     plt.show()
-
-# Define data generators
-train_dir = 'data/train'
-val_dir = 'data/test'
-
-num_train = 28709
-num_val = 7178
-batch_size = 64
-num_epoch = 50
-
-train_datagen = ImageDataGenerator(rescale=1./255)
-val_datagen = ImageDataGenerator(rescale=1./255)
-
-train_generator = train_datagen.flow_from_directory(
-        train_dir,
-        target_size=(48,48),
-        batch_size=batch_size,
-        color_mode="grayscale",
-        class_mode='categorical')
-
-validation_generator = val_datagen.flow_from_directory(
-        val_dir,
-        target_size=(48,48),
-        batch_size=batch_size,
-        color_mode="grayscale",
-        class_mode='categorical')
 
 # Create the model
 model = Sequential()
@@ -101,7 +78,9 @@ if mode == "train":
 
 # emotions will be displayed on your face from the webcam feed
 elif mode == "display":
-    model.load_weights('model.h5')
+
+    abs_dir = str(pathlib.Path(__file__).parent.absolute()) + "/"
+    model.load_weights(abs_dir + 'model.h5')
 
     # prevents openCL usage and unnecessary logging messages
     cv2.ocl.setUseOpenCL(False)
@@ -116,7 +95,7 @@ elif mode == "display":
         ret, frame = cap.read()
         if not ret:
             break
-        facecasc = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+        facecasc = cv2.CascadeClassifier(abs_dir + 'haarcascade_frontalface_default.xml')
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = facecasc.detectMultiScale(gray,scaleFactor=1.3, minNeighbors=5)
 
@@ -135,7 +114,7 @@ elif mode == "display":
                 sys.exit(-1)
 
 
-        cv2.imshow('Video', cv2.resize(frame,(1600,960),interpolation = cv2.INTER_CUBIC))
+        cv2.imshow('Video', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 

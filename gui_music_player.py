@@ -10,6 +10,8 @@ import time
 from threading import Timer, Thread, Event
 import os
 
+import subprocess
+
 from modules.MQTT.transmitSong import MQTTTransmitter
 from modules.MQTT.receiveSong import MQTTReceiver
 
@@ -23,6 +25,9 @@ class FrameApp(Frame):
         self.df_songs = Music_Dataframe()
         self.transmitter = MQTTTransmitter()
         self.receiver = MQTTReceiver()
+
+        self.emotion = 4
+        self.emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful", 3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
 
         self.button_play_pause = Button(
             self, text="Play/Pause", command=self.play_pause_music, width=20)
@@ -60,8 +65,12 @@ class FrameApp(Frame):
                                   width=20)
         self.button_test.grid(row=9, column=0)
 
+        self.button_emotion_detection = Button(
+            self, text="Detect Emotion!", command=self.detect_user_emotion, width=20)
+        self.button_emotion_detection.grid(row=10, column=0)
+
         self.label1 = Label(self)
-        self.label1.grid(row=11, column=0)
+        self.label1.grid(row=12, column=0)
 
         # TODO: Make progressbar, delete songs from playlist, amplify volume
 
@@ -78,7 +87,7 @@ class FrameApp(Frame):
                                 from_=0, to=1000, orient=HORIZONTAL, length=500)
         # Update only on Button Release
         self.timeslider.bind("<ButtonRelease-1>", self.scale_sel)
-        self.timeslider.grid(row=10, column=0)
+        self.timeslider.grid(row=11, column=0)
 
         self.timer = ttkTimer(self.OnTimer, 1.0)
         self.timer.start()  # start Thread
@@ -299,6 +308,17 @@ class FrameApp(Frame):
         current_time = self.player.get_time()
         self.player.set_time(current_time + time_to_skip)
 
+    def detect_user_emotion(self):
+        print("Please wait for our module to load...")
+        print("Please place your face near the camera.")
+
+        process = subprocess.Popen(["python", "./modules/emotionDetection/emotions.py", "--mode", "display"])
+        process.wait()
+        
+        self.emotion = process.returncode
+
+        print("Your Emotion is:", self.emotion_dict[self.emotion])
+        print("Recommending Songs based on your Emotion!")
 
 class ttkTimer(Thread):
     """a class serving same function as wxTimer... but there may be better ways to do this
@@ -336,7 +356,7 @@ def _quit():
 
 if __name__ == '__main__':
     root = Tk()
-    root.geometry("500x500")
+    root.geometry("800x500")
     root.protocol("WM_DELETE_WINDOW", _quit)
     app = FrameApp(root)
     app.mainloop()
