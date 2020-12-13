@@ -135,13 +135,6 @@ elif mode == "display":
                 if emotionArray[i] == emotionArray[i + 1] and emotionArray[i + 1] == emotionArray[i + 2]:
                     sys.exit(emotionArray[i])
 
-            # print(emotion_dict[maxindex])
-            if maxindex >= 0 and maxindex <=6:
-                sys.exit(maxindex)
-            else:
-                sys.exit(-1)
-
-
         cv2.imshow('Video', cv2.resize(frame,(1600,960),interpolation = cv2.INTER_CUBIC))
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
