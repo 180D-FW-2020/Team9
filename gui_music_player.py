@@ -190,6 +190,10 @@ class FrameApp(Frame):
         self.player.addPlaylist(random_playlist)
         self.player.play()
 
+    def set_playlist_as_random_playlist(self):
+        random_playlist = self.create_random_playlist()
+        self.player.addPlaylist(random_playlist)
+
     def create_random_playlist(self) -> list:
         """
         Creates a randomly generated playlist with ALL songs in the dataframe:
@@ -282,8 +286,9 @@ class FrameApp(Frame):
             played = self.player.play_song_from_current_playlist(
                 song_path, start_time=start_time)
             if not played:  # song not in playlist or can't play for some reason
-                self.play_random_playlist()  # random playlist of ALL songs
-                self.player.set_time(start_time)
+                self.set_playlist_as_random_playlist()  # random playlist of ALL songs
+                played = self.player.play_song_from_current_playlist(
+                    song_path, start_time=start_time)
 
     def get_info_current_song(self):
         """
