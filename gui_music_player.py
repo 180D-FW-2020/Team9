@@ -321,8 +321,7 @@ class FrameApp(Frame):
 
         #This currenty does freezes TK inter!
         #Make it use Threads later (along with MQTT)
-
-        self.player.pause()
+        self.player.stop()
 
         print("Please wait for our module to load...")
         print("Please place your face near the camera.")
