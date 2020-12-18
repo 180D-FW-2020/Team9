@@ -1,0 +1,5 @@
+This module contains helper classes for the GUI music player.
+These modules were not meant to be stand-alone; executing the python script will not perform anything.
+
+music_dataframe.py - Implementation of music_dataframe for the GUI, and helper functions. Used in GUI music_player.
+vlc_audio_player.py - Class for VLC_player to be used in GUI music_player (main module).
