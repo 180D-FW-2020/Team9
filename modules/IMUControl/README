@@ -1,12 +1,15 @@
-This program  reads from the acceleromter, gyrscope
-on a BerryIMU connected to a Raspberry Pi.
+This program reads from the gyrscope on a BerryIMU connected to a Raspberry Pi.
 
 Main file name: 
 python3 gesture.py
 
+To run:
+Connect raspberry and have all modules stored in the pi
+Run "python -m IMUControl.gesture" in directory modules
+
 command variable is the output
 
-Sends to IMUCommand MQTT
+Output to IMUCommand MQTT
 TOGGLE => Play or Pause Song
 NEXT => Next Song
 PREV => Previous Song
