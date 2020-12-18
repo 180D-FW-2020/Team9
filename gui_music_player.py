@@ -8,6 +8,7 @@ import random
 import time
 
 from threading import Timer, Thread, Event
+import threading
 import os
 
 import subprocess
@@ -15,6 +16,7 @@ import subprocess
 from modules.MQTT.transmitSong import MQTTTransmitter
 from modules.MQTT.receiveSong import MQTTReceiver
 
+running_subprocesses = []
 
 class FrameApp(Frame):
     def __init__(self, parent):
@@ -66,7 +68,7 @@ class FrameApp(Frame):
         self.button_test.grid(row=9, column=0)
 
         self.button_emotion_detection = Button(
-            self, text="Detect Emotion!", command=self.detect_user_emotion, width=20)
+            self, text="Detect Emotion!", command=self.thread_detect_user_emotion, width=20)
         self.button_emotion_detection.grid(row=10, column=0)
 
         self.export_csv = Button(
@@ -213,6 +215,7 @@ class FrameApp(Frame):
         """
         Whatever function we want to test
         """
+        print("Current Number Threads:", threading.active_count())
         self.print_current_song_info()
 
     def transmit(self):
@@ -318,23 +321,39 @@ class FrameApp(Frame):
         current_time = self.player.get_time()
         self.player.set_time(current_time + time_to_skip)
 
+    def thread_detect_user_emotion(self):
+        """
+        Same as detect_user_emotion(), but creates a new daemon thread
+        and runs it on a separte thread (call this in the gui)
+        """
+        t = Thread(target=self.detect_user_emotion)
+        t.start()
+
     def detect_user_emotion(self):
         """
         Opens a subprocess to detect emotion from user (from a webcam)
         returns: nothing
         """
 
-        #This currenty does freezes TK inter!
-        #Make it use Threads later (along with MQTT)
-        self.player.stop()
+        #Use Threads to prevent freezing;
+        #Using thread.join() with this function seems to freeze GUI as well (most likely due to the subprocess, my guess)
+        """
+        print("In the Function")
+        print("Main Thread:", threading.main_thread())
+        print("Current Thread:", threading.current_thread())
+        print("Current Thread Count:", threading.active_count())
+        """
 
         print("Please wait for our module to load...")
         print("Please place your face near the camera.")
 
-        process = subprocess.Popen(["python", "./modules/emotionDetection/emotions.py", "--mode", "display"])
-        process.wait()
+        emotion_subprocess = subprocess.Popen(["python", "./modules/emotionDetection/emotions.py", "--mode", "display"])
+        running_subprocesses.append(emotion_subprocess) #add to list of running subprocesses
+
+        emotion_subprocess.wait()
+        running_subprocesses.remove(emotion_subprocess) #remove once completed
         
-        self.emotion = process.returncode
+        self.emotion = emotion_subprocess.returncode
 
         print("Your Emotion is:", self.emotion_dict[self.emotion])
         print("Recommending Songs based on your Emotion!")
@@ -401,6 +420,9 @@ class ttkTimer(Thread):
 
 def _quit():
     print("Closing App...")
+    for subprocess in running_subprocesses:
+        subprocess.terminate() #kill all running subprocesses
+    
     root = Tk()
     root.quit()     # stops mainloop
     root.destroy()  # this is necessary on Windows to prevent
