@@ -9,12 +9,13 @@ import time
 
 from threading import Timer, Thread, Event
 import threading
-import os
+import os, sys
 
 import subprocess
 
 from modules.MQTT.transmitSong import MQTTTransmitter
-from modules.MQTT.receiveSong import MQTTReceiver
+import json
+from paho.mqtt import client as mqtt_client
 
 running_subprocesses = []
 
@@ -25,12 +26,23 @@ class FrameApp(Frame):
         self.grid()
         self.player = VLC_Audio_Player()
         self.df_songs = Music_Dataframe()
+
+        #MQTT Transmitter (from MQTT module)
         self.transmitter = MQTTTransmitter()
-        self.receiver = MQTTReceiver()
+
+        #MQTT Receiver (Inside the player itself)
+        #These are variables to initialize the Receiver
+        self.receive_msg = False
+        self.broker = 'broker.emqx.io'
+        self.receiver_topic = "/ECE180DA/Team9"
+        self.client_id = 'python-mqtt'+str(random.randint(0, 1000))
+
+        self.client = self.initialize_mqtt() #connect to broker and subscribe
 
         self.emotion = 4
         self.emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful", 3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
 
+        #GUI code below
         self.button_play_pause = Button(
             self, text="Play/Pause", command=self.play_pause_music, width=20)
         self.button_play_pause.grid(row=1, column=0)
@@ -101,6 +113,61 @@ class FrameApp(Frame):
 
         self.timer = ttkTimer(self.OnTimer, 1.0)
         self.timer.start()  # start Thread
+
+    """
+    MQTT COMMANDS
+    """
+    def initialize_mqtt(self):
+        """
+        same as connect_mqtt() and subscribe_mqtt()
+        returns client
+        """
+        client = self.connect_mqtt()
+        self.subscribe_mqtt(client, self.receiver_topic)
+        return client
+
+    def connect_mqtt(self):
+        """
+        create MQTT client instance
+        connect to MQTT broker:
+        return: client instance (MQTT)
+        """
+        client = mqtt_client.Client(self.client_id)
+        client.on_connect = self.on_connect
+        try:
+            client.connect(self.broker) #default port is 1883
+        except Exception as error: #catch most exceptions, except few:
+            #for details, check https://docs.python.org/3.5/library/exceptions.html#exception-hierarchy
+            print('An exception occurred: {}'.format(error), file=sys.stderr)
+            print("WARNING: Transmit and Receive Can't be used!")
+        return client
+
+
+    def subscribe_mqtt(self, client, topic):
+        client.subscribe(topic)
+        client.on_message = self.on_message
+
+    def on_connect(self, client, userdata, flags, rc):
+        """
+        Prints Message when player is connected to MQtt
+        """
+        if rc == 0:
+            print("Connected to MQTT Broker!")
+        else:
+            print("Failed to connect to MQTT Broker, Transmit/Recieve will not work, return code %d\n", rc)
+    
+    def on_message(self, client, userdata, msg):
+        """
+        The function we call when we receive a message from MQTT broker
+        """
+        print(
+            f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+
+        self.parse_command(json.loads(msg.payload.decode()))
+
+    """
+    END OF MQTT OOMMANDS
+    """
 
     def OnTimer(self):
         """Update the time slider according to the current movie time.
@@ -184,9 +251,6 @@ class FrameApp(Frame):
         """
         self.player.previous()
 
-    def check_music(self):
-        pass
-
     def play_random_playlist(self):
         random_playlist = self.create_random_playlist()
         self.player.addPlaylist(random_playlist)
@@ -238,20 +302,28 @@ class FrameApp(Frame):
 
     def receive(self):
         """
-        Receive song data from MQTT and play that song if possible
+        If Receiver is off: turns receiver on, player will parse any message received via MQTT
+        If Recevier is on: turns receiver off
+
+        Side note: on_message() calls parse_command, so we just need the MQTTclient to be on to parse commands
         """
-        client = self.receiver.connect_mqtt()
-        self.receiver.subscribe(client)
-        client.loop_start()
-        time.sleep(0.5)
-        # without the above pause, the program doesn't have enough time to subscribe and pick up the song info before the comm link is ended
-        client.loop_stop()
-        command = self.receiver.getCommand()
-        songname = self.receiver.getSongname()
-        artistname = self.receiver.getArtistname()
-        songtime = int(self.receiver.getSongtime())
-        print(str(command) + ", " + str(songname) + ", " +
-              str(artistname) + ", " + str(songtime))
+        if self.receive_msg == False:
+            self.client.loop_start()
+            print("Receiver Turned On!")
+            self.receive_msg = True
+        else:
+            self.client.loop_stop()
+            print("Receiver Turned Off!")
+            self.receive_msg = False
+
+    def parse_command(self, msg):
+        """
+        Parses commands given msg (dictionary), and calls correct functions accordingly
+        """
+        command = msg["command"]
+        songname = msg["songname"]
+        artistname = msg["artistname"]
+        songtime = msg["songtime"]
 
         #Python has no switch statements, I could use a dict, but we can talk about this later
         if command == "INPUTSONG":
