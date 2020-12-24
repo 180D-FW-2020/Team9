@@ -79,12 +79,14 @@ class Music_Dataframe:
     def size(self):
         return self.Music.shape[0]
 
-    def find_song(self, title: str, artist=None):
+    def find_song(self, title, artist=None):
         """
         Returns path (string) of the song if the song with same title is found in the database.
         If only title is given, only title is used for query; otherwise, both title and artist is used for query.
         It returns first entry if there are any non-zero number of matching entries, None otherwise.
         """
+        if title is None:
+            return None
 
         if artist != None:
             bool_matching_songs = self.Music['artist'].str.contains(artist, na=False, case=False) \
