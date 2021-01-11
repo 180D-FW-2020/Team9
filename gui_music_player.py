@@ -29,6 +29,10 @@ class FrameApp(Frame):
 
         #MQTT Transmitter (from MQTT module)
         self.transmitter = MQTTTransmitter()
+        self.transmitter_client = self.transmitter.connect_mqtt()
+        self.transmit_msg = False
+
+        self.transmitter_thread = Thread(target=self.transmit)
 
         #MQTT Receiver (Inside the player itself)
         #These are variables to initialize the Receiver
@@ -71,7 +75,7 @@ class FrameApp(Frame):
                                   width=20)
         self.button_test.grid(row=7, column=0)
 
-        self.button_test = Button(self, text="Transmit", command=self.transmit,
+        self.button_test = Button(self, text="Transmit", command=self.thread_transmit,
                                   width=20)
         self.button_test.grid(row=8, column=0)
 
@@ -217,13 +221,13 @@ class FrameApp(Frame):
     def pause(self):
         """
         Pause current song. Does nothing if the song is already paused.
+        Note: this is different behavior from VLC-python's Pause which acts like "Toggle"
         """
         self.player.pause()
 
     def play_pause_music(self):
         """
-        Plays Current Song
-        :return: None
+        Plays song if Paused, Pauses song if Playing.
         """
         if self.player.is_playing():
             self.player.pause()
@@ -282,23 +286,49 @@ class FrameApp(Frame):
         print("Current Number Threads:", threading.active_count())
         self.print_current_song_info()
 
+    def thread_transmit(self):
+        """
+        Sets self.transmit_msg to On/Off (Switch for Transmitter, not atomic)
+        If transmitter is turned on, sends a message to client every interval.
+        """
+
+        if self.transmit_msg == True:
+            self.transmit_msg = False
+            print("Transmitter Turned Off")
+
+        else:
+            self.transmit_msg = True
+
+            if not self.transmitter_thread.is_alive():
+                #only start thread if thread is not alive
+                self.transmitter_thread = Thread(target=self.transmit)
+                self.transmitter_thread.start()
+            
+            print("Transmitter Turned On")
+
     def transmit(self):
         """
-        Transmit song data via MQTT
+        Transmit song data via MQTT every Interval (loops forever as long as tramsitter is on, use a thread)
         """
-        (song_metadata, songtime) = self.get_info_current_song()
-        songname = song_metadata.title
-        artistname = song_metadata.artist
+        while self.transmit_msg == True:
+            (song_metadata, songtime) = self.get_info_current_song()
 
-        self.transmitter.setSongname(songname)
-        self.transmitter.setArtistname(artistname)
-        self.transmitter.setSongtime(songtime)
-        self.transmitter.setCommand("INPUTSONG")
+            if song_metadata is not None:
+                songname = song_metadata.title
+                artistname = song_metadata.artist
 
-        client = self.transmitter.connect_mqtt()
-        client.loop_start()
-        self.transmitter.publish(client)
-        client.loop_stop()
+                self.transmitter.setSongname(songname)
+                self.transmitter.setArtistname(artistname)
+                self.transmitter.setSongtime(songtime)
+
+                if self.player.is_playing():
+                    self.transmitter.setCommand("INPUTSONG")
+                else:
+                    self.transmitter.setCommand("PAUSE")
+
+                self.transmitter.publish(self.transmitter_client)
+
+            time.sleep(3) #Interval to sleep between each message
 
     def receive(self):
         """
@@ -327,7 +357,21 @@ class FrameApp(Frame):
 
         #Python has no switch statements, I could use a dict, but we can talk about this later
         if command == "INPUTSONG":
-        	self.play_song(songname, artist=artistname, start_time=int(songtime))
+            #If song is same as current song being played
+            (player_song_metadata, player_songtime) = self.get_info_current_song()
+            
+            if player_song_metadata is None: #edge case with no song being played
+                player_song_name = None
+            else:
+                player_song_name = player_song_metadata.title
+
+            if player_song_name == songname: #songname matches
+                #only change timestamp of song when off by more than 15 sec.
+                if abs(player_songtime - songtime) > 15000:
+                    self.play_song(songname, artist=artistname, start_time=int(songtime)) 
+            else:
+                self.play_song(songname, artist=artistname, start_time=int(songtime))
+
         elif command == "PLAY":
             self.play()
         elif command == "PAUSE":

@@ -43,7 +43,8 @@ class VLC_Audio_Player:
     def next(self):
         self.listPlayer.next()
     def pause(self):
-        self.listPlayer.pause()
+        if self.listPlayer.is_playing():
+            self.listPlayer.pause()
     def previous(self):
         self.listPlayer.previous()
     def stop(self):
