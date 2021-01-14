@@ -8,13 +8,16 @@ import random
 import time
 
 from threading import Timer, Thread, Event
-import os
+import threading
+import os, sys
 
 import subprocess
 
 from modules.MQTT.transmitSong import MQTTTransmitter
-from modules.MQTT.receiveSong import MQTTReceiver
+import json
+from paho.mqtt import client as mqtt_client
 
+running_subprocesses = []
 
 class FrameApp(Frame):
     def __init__(self, parent):
@@ -23,12 +26,27 @@ class FrameApp(Frame):
         self.grid()
         self.player = VLC_Audio_Player()
         self.df_songs = Music_Dataframe()
+
+        #MQTT Transmitter (from MQTT module)
         self.transmitter = MQTTTransmitter()
-        self.receiver = MQTTReceiver()
+        self.transmitter_client = self.transmitter.connect_mqtt()
+        self.transmit_msg = False
+
+        self.transmitter_thread = Thread(target=self.transmit)
+
+        #MQTT Receiver (Inside the player itself)
+        #These are variables to initialize the Receiver
+        self.receive_msg = False
+        self.broker = 'broker.emqx.io'
+        self.receiver_topic = "/ECE180DA/Team9"
+        self.client_id = 'python-mqtt'+str(random.randint(0, 1000))
+
+        self.client = self.initialize_mqtt() #connect to broker and subscribe
 
         self.emotion = 4
         self.emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful", 3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
 
+        #GUI code below
         self.button_play_pause = Button(
             self, text="Play/Pause", command=self.play_pause_music, width=20)
         self.button_play_pause.grid(row=1, column=0)
@@ -57,7 +75,7 @@ class FrameApp(Frame):
                                   width=20)
         self.button_test.grid(row=7, column=0)
 
-        self.button_test = Button(self, text="Transmit", command=self.transmit,
+        self.button_test = Button(self, text="Transmit", command=self.thread_transmit,
                                   width=20)
         self.button_test.grid(row=8, column=0)
 
@@ -66,7 +84,7 @@ class FrameApp(Frame):
         self.button_test.grid(row=9, column=0)
 
         self.button_emotion_detection = Button(
-            self, text="Detect Emotion!", command=self.detect_user_emotion, width=20)
+            self, text="Detect Emotion!", command=self.thread_detect_user_emotion, width=20)
         self.button_emotion_detection.grid(row=10, column=0)
 
         self.export_csv = Button(
@@ -99,6 +117,61 @@ class FrameApp(Frame):
 
         self.timer = ttkTimer(self.OnTimer, 1.0)
         self.timer.start()  # start Thread
+
+    """
+    MQTT COMMANDS
+    """
+    def initialize_mqtt(self):
+        """
+        same as connect_mqtt() and subscribe_mqtt()
+        returns client
+        """
+        client = self.connect_mqtt()
+        self.subscribe_mqtt(client, self.receiver_topic)
+        return client
+
+    def connect_mqtt(self):
+        """
+        create MQTT client instance
+        connect to MQTT broker:
+        return: client instance (MQTT)
+        """
+        client = mqtt_client.Client(self.client_id)
+        client.on_connect = self.on_connect
+        try:
+            client.connect(self.broker) #default port is 1883
+        except Exception as error: #catch most exceptions, except few:
+            #for details, check https://docs.python.org/3.5/library/exceptions.html#exception-hierarchy
+            print('An exception occurred: {}'.format(error), file=sys.stderr)
+            print("WARNING: Transmit and Receive Can't be used!")
+        return client
+
+
+    def subscribe_mqtt(self, client, topic):
+        client.subscribe(topic)
+        client.on_message = self.on_message
+
+    def on_connect(self, client, userdata, flags, rc):
+        """
+        Prints Message when player is connected to MQtt
+        """
+        if rc == 0:
+            print("Connected to MQTT Broker!")
+        else:
+            print("Failed to connect to MQTT Broker, Transmit/Recieve will not work, return code %d\n", rc)
+    
+    def on_message(self, client, userdata, msg):
+        """
+        The function we call when we receive a message from MQTT broker
+        """
+        print(
+            f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+
+        self.parse_command(json.loads(msg.payload.decode()))
+
+    """
+    END OF MQTT OOMMANDS
+    """
 
     def OnTimer(self):
         """Update the time slider according to the current movie time.
@@ -148,13 +221,13 @@ class FrameApp(Frame):
     def pause(self):
         """
         Pause current song. Does nothing if the song is already paused.
+        Note: this is different behavior from VLC-python's Pause which acts like "Toggle"
         """
         self.player.pause()
 
     def play_pause_music(self):
         """
-        Plays Current Song
-        :return: None
+        Plays song if Paused, Pauses song if Playing.
         """
         if self.player.is_playing():
             self.player.pause()
@@ -181,9 +254,6 @@ class FrameApp(Frame):
         :return: 
         """
         self.player.previous()
-
-    def check_music(self):
-        pass
 
     def play_random_playlist(self):
         random_playlist = self.create_random_playlist()
@@ -213,46 +283,95 @@ class FrameApp(Frame):
         """
         Whatever function we want to test
         """
+        print("Current Number Threads:", threading.active_count())
         self.print_current_song_info()
+
+    def thread_transmit(self):
+        """
+        Sets self.transmit_msg to On/Off (Switch for Transmitter, not atomic)
+        If transmitter is turned on, sends a message to client every interval.
+        """
+
+        if self.transmit_msg == True:
+            self.transmit_msg = False
+            print("Transmitter Turned Off")
+
+        else:
+            self.transmit_msg = True
+
+            if not self.transmitter_thread.is_alive():
+                #only start thread if thread is not alive
+                self.transmitter_thread = Thread(target=self.transmit)
+                self.transmitter_thread.start()
+            
+            print("Transmitter Turned On")
 
     def transmit(self):
         """
-        Transmit song data via MQTT
+        Transmit song data via MQTT every Interval (loops forever as long as tramsitter is on, use a thread)
         """
-        (song_metadata, songtime) = self.get_info_current_song()
-        songname = song_metadata.title
-        artistname = song_metadata.artist
+        while self.transmit_msg == True:
+            (song_metadata, songtime) = self.get_info_current_song()
 
-        self.transmitter.setSongname(songname)
-        self.transmitter.setArtistname(artistname)
-        self.transmitter.setSongtime(songtime)
-        self.transmitter.setCommand("INPUTSONG")
+            if song_metadata is not None:
+                songname = song_metadata.title
+                artistname = song_metadata.artist
 
-        client = self.transmitter.connect_mqtt()
-        client.loop_start()
-        self.transmitter.publish(client)
-        client.loop_stop()
+                self.transmitter.setSongname(songname)
+                self.transmitter.setArtistname(artistname)
+                self.transmitter.setSongtime(songtime)
+
+                if self.player.is_playing():
+                    self.transmitter.setCommand("INPUTSONG")
+                else:
+                    self.transmitter.setCommand("PAUSE")
+
+                self.transmitter.publish(self.transmitter_client)
+
+            time.sleep(3) #Interval to sleep between each message
 
     def receive(self):
         """
-        Receive song data from MQTT and play that song if possible
+        If Receiver is off: turns receiver on, player will parse any message received via MQTT
+        If Recevier is on: turns receiver off
+
+        Side note: on_message() calls parse_command, so we just need the MQTTclient to be on to parse commands
         """
-        client = self.receiver.connect_mqtt()
-        self.receiver.subscribe(client)
-        client.loop_start()
-        time.sleep(0.5)
-        # without the above pause, the program doesn't have enough time to subscribe and pick up the song info before the comm link is ended
-        client.loop_stop()
-        command = self.receiver.getCommand()
-        songname = self.receiver.getSongname()
-        artistname = self.receiver.getArtistname()
-        songtime = int(self.receiver.getSongtime())
-        print(str(command) + ", " + str(songname) + ", " +
-              str(artistname) + ", " + str(songtime))
+        if self.receive_msg == False:
+            self.client.loop_start()
+            print("Receiver Turned On!")
+            self.receive_msg = True
+        else:
+            self.client.loop_stop()
+            print("Receiver Turned Off!")
+            self.receive_msg = False
+
+    def parse_command(self, msg):
+        """
+        Parses commands given msg (dictionary), and calls correct functions accordingly
+        """
+        command = msg["command"]
+        songname = msg["songname"]
+        artistname = msg["artistname"]
+        songtime = msg["songtime"]
 
         #Python has no switch statements, I could use a dict, but we can talk about this later
         if command == "INPUTSONG":
-        	self.play_song(songname, artist=artistname, start_time=int(songtime))
+            #If song is same as current song being played
+            (player_song_metadata, player_songtime) = self.get_info_current_song()
+            
+            if player_song_metadata is None: #edge case with no song being played
+                player_song_name = None
+            else:
+                player_song_name = player_song_metadata.title
+
+            if player_song_name == songname: #songname matches
+                #only change timestamp of song when off by more than 15 sec.
+                if abs(player_songtime - songtime) > 15000:
+                    self.play_song(songname, artist=artistname, start_time=int(songtime)) 
+            else:
+                self.play_song(songname, artist=artistname, start_time=int(songtime))
+
         elif command == "PLAY":
             self.play()
         elif command == "PAUSE":
@@ -318,23 +437,39 @@ class FrameApp(Frame):
         current_time = self.player.get_time()
         self.player.set_time(current_time + time_to_skip)
 
+    def thread_detect_user_emotion(self):
+        """
+        Same as detect_user_emotion(), but creates a new daemon thread
+        and runs it on a separte thread (call this in the gui)
+        """
+        t = Thread(target=self.detect_user_emotion)
+        t.start()
+
     def detect_user_emotion(self):
         """
         Opens a subprocess to detect emotion from user (from a webcam)
         returns: nothing
         """
 
-        #This currenty does freezes TK inter!
-        #Make it use Threads later (along with MQTT)
-        self.player.stop()
+        #Use Threads to prevent freezing;
+        #Using thread.join() with this function seems to freeze GUI as well (most likely due to the subprocess, my guess)
+        """
+        print("In the Function")
+        print("Main Thread:", threading.main_thread())
+        print("Current Thread:", threading.current_thread())
+        print("Current Thread Count:", threading.active_count())
+        """
 
         print("Please wait for our module to load...")
         print("Please place your face near the camera.")
 
-        process = subprocess.Popen(["python", "./modules/emotionDetection/emotions.py", "--mode", "display"])
-        process.wait()
+        emotion_subprocess = subprocess.Popen(["python", "./modules/emotionDetection/emotions.py", "--mode", "display"])
+        running_subprocesses.append(emotion_subprocess) #add to list of running subprocesses
+
+        emotion_subprocess.wait()
+        running_subprocesses.remove(emotion_subprocess) #remove once completed
         
-        self.emotion = process.returncode
+        self.emotion = emotion_subprocess.returncode
 
         print("Your Emotion is:", self.emotion_dict[self.emotion])
         print("Recommending Songs based on your Emotion!")
@@ -401,6 +536,9 @@ class ttkTimer(Thread):
 
 def _quit():
     print("Closing App...")
+    for subprocess in running_subprocesses:
+        subprocess.terminate() #kill all running subprocesses
+    
     root = Tk()
     root.quit()     # stops mainloop
     root.destroy()  # this is necessary on Windows to prevent
