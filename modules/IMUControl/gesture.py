@@ -40,7 +40,6 @@ IMUControl.IMU.initIMU()       #Initialise the accelerometer, gyroscope and comp
 pastGYRx = 0
 pastGYRz = 0
 count = 0
-command = "NONE"
 transmitterInstance = MQTTTransmitter()
 
     
@@ -50,6 +49,26 @@ def sendIMU(command):
     client.loop_start()
     transmitterInstance.publish(client)
     client.loop_stop()
+
+def timeset(diffin, com):
+    out = 0.35
+    if com == 'n' :
+        if diffin < 3000 :
+            out = 0.4
+        elif diffin > 8000:
+            out = 0.3
+    if com == 'p' :
+        if diffin > -3000 :
+            out = 0.4
+        elif diffin < -8000 :
+            out = 0.3
+    if com == 't' :
+        out = 0.4
+        if diffin < 3000 :
+            out = 0.45
+        elif diffin > 8000:
+            out = 0.35
+    return out
 
 while True:
 
@@ -76,39 +95,34 @@ while True:
     diffGYRz = pastGYRz - GYRz
     #print(diffGYRx)
 
-    if command != "NONE" :
-        command = "NONE"
-        #print(command)
-
     if diffGYRx > 1800 :    #read clockwise hand motion
-        time.sleep(0.35)            #delay for counter clockwise hand motion        .35
+        t = timeset(diffGYRx,'n')
+        time.sleep(t)            #delay for counter clockwise hand motion        .35
         GYRxTemp = IMUControl.IMU.readGYRx()   #read 
         diffTempn = GYRx - GYRxTemp
-        if diffTempn < -5000 :     #check for counter clockwise motion
-            command = "NEXT"             #the output command for Next Song
-            #print(command)
-            sendIMU(command)
-            time.sleep(.9)
+        #print(diffTempn, ",", diffGYRx)
+        if diffTempn < (diffGYRx*-.9) :     #check for counter clockwise motion
+            sendIMU("NEXT")     #the output command for Next Song
+            time.sleep(0.3)
     if diffGYRx < -2000 :
-        time.sleep(0.35)            #delay for counter clockwise hand motion        .35
+        t = timeset(diffGYRx,'p')
+        time.sleep(t)            #delay for counter clockwise hand motion        .35
         GYRxTemp = IMUControl.IMU.readGYRx()   #read 
         diffTempp = GYRx - GYRxTemp
-        if diffTempp > 4500 :     #check for counter clockwise motion
-            command = "PREV"             #the output command for Previous Song
-            #print(command)
-            sendIMU(command)
-            time.sleep(.9)
+        #print(diffTempp, ",", diffGYRx)
+        if diffTempp > (diffGYRx*-.9) :     #check for counter clockwise motion
+            sendIMU("PREV")     #the output command for Previous Song
+            time.sleep(0.3)
     if diffGYRz > 2000 :
-        time.sleep(0.4)
+        t = timeset(diffGYRx,'t')
+        time.sleep(t)
         GYRzTemp = IMUControl.IMU.readGYRz()
         diffTemps = GYRz - GYRzTemp
-        if diffTemps < -5000 :
-            command = "TOGGLE"      #the output command for play and pause
-            #print(command)
-            sendIMU(command)
-            time.sleep(.9)
+        #print(diffTemps, ",", diffGYRz)
+        if diffTemps < (diffGYRz*-.9) :
+            sendIMU("TOGGLE")      #the output command for play and pause
+            time.sleep(0.3)
 
     pastGYRx = GYRx
 
     time.sleep(0.2)
-
