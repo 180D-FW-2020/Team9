@@ -11,7 +11,7 @@ class MQTTReceiver:
         #self.broker = 'mqtt.eclipse.org'
         self.broker = 'broker.emqx.io'
         self.port = 1883
-        self.topic = "/ECE180DA/Team9"
+        self.topic = "/ECE180DA/Team9/"
         self.client_id = 'python-mqtt'+str(random.randint(0, 1000))
         self.command = ""
         self.songname = ""

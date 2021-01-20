@@ -9,7 +9,8 @@ import time
 
 from threading import Timer, Thread, Event
 import threading
-import os, sys
+import os
+import sys
 
 import subprocess
 
@@ -19,6 +20,7 @@ from paho.mqtt import client as mqtt_client
 
 running_subprocesses = []
 
+
 class FrameApp(Frame):
     def __init__(self, parent):
         super(FrameApp, self).__init__(parent)
@@ -27,26 +29,30 @@ class FrameApp(Frame):
         self.player = VLC_Audio_Player()
         self.df_songs = Music_Dataframe()
 
-        #MQTT Transmitter (from MQTT module)
+        # Default Topic for MQTT is "/ECE180DA/Team9/"
+        self.default_topic =  "/ECE180DA/Team9/"
+
+        # MQTT Transmitter (from MQTT module)
         self.transmitter = MQTTTransmitter()
         self.transmitter_client = self.transmitter.connect_mqtt()
         self.transmit_msg = False
 
         self.transmitter_thread = Thread(target=self.transmit)
 
-        #MQTT Receiver (Inside the player itself)
-        #These are variables to initialize the Receiver
+        # MQTT Receiver (Inside the player itself)
+        # These are variables to initialize the Receiver
         self.receive_msg = False
         self.broker = 'broker.emqx.io'
-        self.receiver_topic = "/ECE180DA/Team9"
+        self.receiver_topic = self.default_topic
         self.client_id = 'python-mqtt'+str(random.randint(0, 1000))
 
-        self.client = self.initialize_mqtt() #connect to broker and subscribe
+        self.client = self.initialize_mqtt()  # connect to broker and subscribe
 
         self.emotion = 4
-        self.emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful", 3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
+        self.emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful",
+                             3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
 
-        #GUI code below
+        # GUI code below
         self.button_play_pause = Button(
             self, text="Play/Pause", command=self.play_pause_music, width=20)
         self.button_play_pause.grid(row=1, column=0)
@@ -75,13 +81,25 @@ class FrameApp(Frame):
                                   width=20)
         self.button_test.grid(row=7, column=0)
 
-        self.button_test = Button(self, text="Transmit", command=self.thread_transmit,
-                                  width=20)
-        self.button_test.grid(row=8, column=0)
+        self.button_transmit = Button(self, text="Transmit ON/OFF", command=self.thread_transmit,
+                                      width=20)
+        self.button_transmit.grid(row=8, column=0)
 
-        self.button_test = Button(self, text="Receive", command=self.receive,
-                                  width=20)
-        self.button_test.grid(row=9, column=0)
+        self.TChannel = Entry(self)
+        self.TChannel.grid(row=8, column=1)
+        self.button_TChannel = Button(
+            self, text="Load Transmitter Channel", command=self.transmit_channel, width=20)
+        self.button_TChannel.grid(row=8, column=2)
+
+        self.button_receive = Button(self, text="Receive ON/OFF", command=self.receive,
+                                     width=20)
+        self.button_receive.grid(row=9, column=0)
+
+        self.RChannel = Entry(self)
+        self.RChannel.grid(row=9, column=1)
+        self.button_RChannel = Button(
+            self, text="Load Receiver Channel", command=self.receive_channel, width=20)
+        self.button_RChannel.grid(row=9, column=2)
 
         self.button_emotion_detection = Button(
             self, text="Detect Emotion!", command=self.thread_detect_user_emotion, width=20)
@@ -121,6 +139,7 @@ class FrameApp(Frame):
     """
     MQTT COMMANDS
     """
+
     def initialize_mqtt(self):
         """
         same as connect_mqtt() and subscribe_mqtt()
@@ -139,13 +158,12 @@ class FrameApp(Frame):
         client = mqtt_client.Client(self.client_id)
         client.on_connect = self.on_connect
         try:
-            client.connect(self.broker) #default port is 1883
-        except Exception as error: #catch most exceptions, except few:
-            #for details, check https://docs.python.org/3.5/library/exceptions.html#exception-hierarchy
+            client.connect(self.broker)  # default port is 1883
+        except Exception as error:  # catch most exceptions, except few:
+            # for details, check https://docs.python.org/3.5/library/exceptions.html#exception-hierarchy
             print('An exception occurred: {}'.format(error), file=sys.stderr)
             print("WARNING: Transmit and Receive Can't be used!")
         return client
-
 
     def subscribe_mqtt(self, client, topic):
         client.subscribe(topic)
@@ -158,8 +176,9 @@ class FrameApp(Frame):
         if rc == 0:
             print("Connected to MQTT Broker!")
         else:
-            print("Failed to connect to MQTT Broker, Transmit/Recieve will not work, return code %d\n", rc)
-    
+            print(
+                "Failed to connect to MQTT Broker, Transmit/Recieve will not work, return code %d\n", rc)
+
     def on_message(self, client, userdata, msg):
         """
         The function we call when we receive a message from MQTT broker
@@ -300,11 +319,17 @@ class FrameApp(Frame):
             self.transmit_msg = True
 
             if not self.transmitter_thread.is_alive():
-                #only start thread if thread is not alive
+                # only start thread if thread is not alive
                 self.transmitter_thread = Thread(target=self.transmit)
                 self.transmitter_thread.start()
-            
+
             print("Transmitter Turned On")
+
+    def transmit_channel(self):
+        input = self.TChannel.get()
+        self.transmitter.topic = self.default_topic + str(input)
+        print("the transmitter channel name has been changed to: " +
+              self.transmitter.topic)
 
     def transmit(self):
         """
@@ -328,7 +353,14 @@ class FrameApp(Frame):
 
                 self.transmitter.publish(self.transmitter_client)
 
-            time.sleep(3) #Interval to sleep between each message
+            time.sleep(3)  # Interval to sleep between each message
+
+    def receive_channel(self):
+        input = self.RChannel.get()
+        self.receiver_topic = self.default_topic + str(input)
+        self.client.subscribe(self.receiver_topic)
+        print("the receriver channel name has been changed to: " +
+              self.receiver_topic)
 
     def receive(self):
         """
@@ -355,22 +387,24 @@ class FrameApp(Frame):
         artistname = msg["artistname"]
         songtime = msg["songtime"]
 
-        #Python has no switch statements, I could use a dict, but we can talk about this later
+        # Python has no switch statements, I could use a dict, but we can talk about this later
         if command == "INPUTSONG":
-            #If song is same as current song being played
+            # If song is same as current song being played
             (player_song_metadata, player_songtime) = self.get_info_current_song()
-            
-            if player_song_metadata is None: #edge case with no song being played
+
+            if player_song_metadata is None:  # edge case with no song being played
                 player_song_name = None
             else:
                 player_song_name = player_song_metadata.title
 
-            if player_song_name == songname: #songname matches
-                #only change timestamp of song when off by more than 15 sec.
-                if abs(player_songtime - songtime) > 15000:
-                    self.play_song(songname, artist=artistname, start_time=int(songtime)) 
+            if player_song_name == songname:  # songname matches
+                # only change timestamp of song when off by more than 5 sec.
+                if abs(player_songtime - songtime) > 5000:
+                    self.play_song(songname, artist=artistname,
+                                   start_time=int(songtime))
             else:
-                self.play_song(songname, artist=artistname, start_time=int(songtime))
+                self.play_song(songname, artist=artistname,
+                               start_time=int(songtime))
 
         elif command == "PLAY":
             self.play()
@@ -379,14 +413,13 @@ class FrameApp(Frame):
         elif command == "TOGGLE":
             self.play_pause_music()
         elif command == "SKIPTIME":
-            self.skip_time(int(songtime)*1000) #time to skip is in ms
+            self.skip_time(int(songtime)*1000)  # time to skip is in ms
         elif command == "NEXT":
             self.next_song()
         elif command == "PREV":
             self.previous_song()
-        else: #command not recognized
+        else:  # command not recognized
             print("Command not Recognized!")
-
 
     def play_song(self, title, artist=None, start_time=0):
         """
@@ -432,8 +465,8 @@ class FrameApp(Frame):
 
         print("Title: %s Artist: %s Time: %.2fsec" %
               (curr_title, curr_artist, curr_time/1000))
-    
-    def skip_time(self, time_to_skip=5000): #time to skip in ms
+
+    def skip_time(self, time_to_skip=5000):  # time to skip in ms
         current_time = self.player.get_time()
         self.player.set_time(current_time + time_to_skip)
 
@@ -451,8 +484,8 @@ class FrameApp(Frame):
         returns: nothing
         """
 
-        #Use Threads to prevent freezing;
-        #Using thread.join() with this function seems to freeze GUI as well (most likely due to the subprocess, my guess)
+        # Use Threads to prevent freezing;
+        # Using thread.join() with this function seems to freeze GUI as well (most likely due to the subprocess, my guess)
         """
         print("In the Function")
         print("Main Thread:", threading.main_thread())
@@ -463,12 +496,15 @@ class FrameApp(Frame):
         print("Please wait for our module to load...")
         print("Please place your face near the camera.")
 
-        emotion_subprocess = subprocess.Popen(["python", "./modules/emotionDetection/emotions.py", "--mode", "display"])
-        running_subprocesses.append(emotion_subprocess) #add to list of running subprocesses
+        emotion_subprocess = subprocess.Popen(
+            ["python", "./modules/emotionDetection/emotions.py", "--mode", "display"])
+        # add to list of running subprocesses
+        running_subprocesses.append(emotion_subprocess)
 
         emotion_subprocess.wait()
-        running_subprocesses.remove(emotion_subprocess) #remove once completed
-        
+        running_subprocesses.remove(
+            emotion_subprocess)  # remove once completed
+
         self.emotion = emotion_subprocess.returncode
 
         print("Your Emotion is:", self.emotion_dict[self.emotion])
@@ -500,7 +536,7 @@ class FrameApp(Frame):
         Returns .csv of Dataframe
         """
         self.df_songs.export_csv(file_path="./Smartify_Data.csv")
-    
+
     def import_csv(self):
         """
         Sets Dataframe values to equal the .csv file, if the columns are valid
@@ -537,8 +573,8 @@ class ttkTimer(Thread):
 def _quit():
     print("Closing App...")
     for subprocess in running_subprocesses:
-        subprocess.terminate() #kill all running subprocesses
-    
+        subprocess.terminate()  # kill all running subprocesses
+
     root = Tk()
     root.quit()     # stops mainloop
     root.destroy()  # this is necessary on Windows to prevent
@@ -548,7 +584,7 @@ def _quit():
 
 if __name__ == '__main__':
     root = Tk()
-    root.geometry("500x500")
+    root.geometry("800x500")
     root.protocol("WM_DELETE_WINDOW", _quit)
     app = FrameApp(root)
     app.mainloop()
