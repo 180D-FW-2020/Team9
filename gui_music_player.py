@@ -29,6 +29,9 @@ class FrameApp(Frame):
         self.player = VLC_Audio_Player()
         self.df_songs = Music_Dataframe()
 
+        # Default Topic for MQTT is "/ECE180DA/Team9/"
+        self.default_topic =  "/ECE180DA/Team9/"
+
         # MQTT Transmitter (from MQTT module)
         self.transmitter = MQTTTransmitter()
         self.transmitter_client = self.transmitter.connect_mqtt()
@@ -40,7 +43,7 @@ class FrameApp(Frame):
         # These are variables to initialize the Receiver
         self.receive_msg = False
         self.broker = 'broker.emqx.io'
-        self.receiver_topic = "/ECE180DA/Team9"
+        self.receiver_topic = self.default_topic
         self.client_id = 'python-mqtt'+str(random.randint(0, 1000))
 
         self.client = self.initialize_mqtt()  # connect to broker and subscribe
@@ -78,7 +81,7 @@ class FrameApp(Frame):
                                   width=20)
         self.button_test.grid(row=7, column=0)
 
-        self.button_transmit = Button(self, text="Transmit", command=self.thread_transmit,
+        self.button_transmit = Button(self, text="Transmit ON/OFF", command=self.thread_transmit,
                                       width=20)
         self.button_transmit.grid(row=8, column=0)
 
@@ -88,7 +91,7 @@ class FrameApp(Frame):
             self, text="Load Transmitter Channel", command=self.transmit_channel, width=20)
         self.button_TChannel.grid(row=8, column=2)
 
-        self.button_receive = Button(self, text="Receive", command=self.receive,
+        self.button_receive = Button(self, text="Receive ON/OFF", command=self.receive,
                                      width=20)
         self.button_receive.grid(row=9, column=0)
 
@@ -324,7 +327,7 @@ class FrameApp(Frame):
 
     def transmit_channel(self):
         input = self.TChannel.get()
-        self.transmitter.topic = self.transmitter.topic + "/" + str(input)
+        self.transmitter.topic = self.default_topic + str(input)
         print("the transmitter channel name has been changed to: " +
               self.transmitter.topic)
 
@@ -354,7 +357,8 @@ class FrameApp(Frame):
 
     def receive_channel(self):
         input = self.RChannel.get()
-        self.receiver_topic = self.receiver_topic + "/" + str(input)
+        self.receiver_topic = self.default_topic + str(input)
+        self.client.subscribe(self.receiver_topic)
         print("the receriver channel name has been changed to: " +
               self.receiver_topic)
 
@@ -394,8 +398,8 @@ class FrameApp(Frame):
                 player_song_name = player_song_metadata.title
 
             if player_song_name == songname:  # songname matches
-                # only change timestamp of song when off by more than 15 sec.
-                if abs(player_songtime - songtime) > 15000:
+                # only change timestamp of song when off by more than 5 sec.
+                if abs(player_songtime - songtime) > 5000:
                     self.play_song(songname, artist=artistname,
                                    start_time=int(songtime))
             else:
@@ -580,7 +584,7 @@ def _quit():
 
 if __name__ == '__main__':
     root = Tk()
-    root.geometry("500x500")
+    root.geometry("800x500")
     root.protocol("WM_DELETE_WINDOW", _quit)
     app = FrameApp(root)
     app.mainloop()
