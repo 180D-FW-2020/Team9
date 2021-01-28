@@ -18,6 +18,9 @@ from modules.MQTT.transmitSong import MQTTTransmitter
 import json
 from paho.mqtt import client as mqtt_client
 
+import pafy
+from youtubesearchpython import VideosSearch
+
 running_subprocesses = []
 
 
@@ -105,13 +108,13 @@ class FrameApp(Frame):
             self, text="Detect Emotion!", command=self.thread_detect_user_emotion, width=20)
         self.button_emotion_detection.grid(row=10, column=0)
 
-        self.export_csv = Button(
+        self.button_export_csv = Button(
             self, text="Export Smartify Data", command=self.export_csv, width=20)
-        self.export_csv.grid(row=11, column=0)
+        self.button_export_csv.grid(row=11, column=0)
 
-        self.import_csv = Button(
+        self.button_import_csv = Button(
             self, text="Import Smartify Data", command=self.import_csv, width=20)
-        self.import_csv.grid(row=12, column=0)
+        self.button_import_csv.grid(row=12, column=0)
 
         self.label1 = Label(self)
         self.label1.grid(row=14, column=0)
@@ -304,6 +307,8 @@ class FrameApp(Frame):
         """
         print("Current Number Threads:", threading.active_count())
         self.print_current_song_info()
+        self.df_songs.clear_all_youtube_links()
+        print("Youtube Links Cleared from Dataframe")
 
     def thread_transmit(self):
         """
@@ -428,12 +433,33 @@ class FrameApp(Frame):
         Otherwise, the song is played from the current playlist (if it is on the playlist)
         If the song is not on current playlist, a random playlist is generated (with the song), and is played
         """
+        #Don't do anything on when given null
+        if title is None:
+            return
 
         song_path = self.df_songs.find_song(title=title, artist=artist)
 
+        #CHANGE THIS LINE LATER S0 we can let user decide:
+        self.enable_youtube_search= True
+
         if song_path == None:
-            print("Song Not Found!")
-            return
+            if self.enable_youtube_search:
+                song_info = {'title':title, 'artist': artist}
+                #search song on separate thread
+                youtube_link = self.search_song_online(song_info)
+                video = pafy.new(youtube_link)
+                audio = video.getbestaudio()
+                audio_link = audio.url
+
+                self.df_songs.insert(audio_link, song_info)
+
+                #Now play the song
+                self.set_playlist_as_random_playlist()  # random playlist of ALL songs
+                played = self.player.play_song_from_current_playlist(
+                    song_path, start_time=start_time)
+            else:
+                print("Song Not Found!")
+                return
         else:
             played = self.player.play_song_from_current_playlist(
                 song_path, start_time=start_time)
@@ -441,6 +467,20 @@ class FrameApp(Frame):
                 self.set_playlist_as_random_playlist()  # random playlist of ALL songs
                 played = self.player.play_song_from_current_playlist(
                     song_path, start_time=start_time)
+    
+    def search_song_online(self, song_info):
+        """
+        input: song_info - dictionary of metadata
+        returns: youtube_link of video (of Youtube video)
+        """
+        search_str = str(song_info['title'])+ " " + str(song_info['artist'])
+
+        song_search = VideosSearch(search_str, limit=5)
+
+        video_link = song_search.result()['result'][0]['link']
+
+        return video_link
+
 
     def get_info_current_song(self):
         """

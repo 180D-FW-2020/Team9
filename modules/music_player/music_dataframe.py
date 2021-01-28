@@ -15,6 +15,30 @@ class Music_Dataframe:
 
         if path is not None:
             self.load(path)
+
+    def insert(self, path, metadata_dict):
+        """
+        Inserts Dataframe given its input(path, dict of metadata)
+        Does not add duplicates (based upon path) (same song, different Youtube link, will be added)
+        """
+        #Don't add duplicates
+        if path in self.tags or path == None:
+            return
+        
+        current_music_data = {}
+        current_music_data['path'] = path
+        current_music_data['title'] = metadata_dict["title"]
+        current_music_data['artist'] = metadata_dict["artist"]
+        current_music_data['emotion'] = random.randint(0,6) #random emotion for each song
+
+        song_tag = TinyTag(None, 0) #File handler and file-size not-relevant for this program
+        song_tag.artist = current_music_data['artist']
+        song_tag.title = current_music_data['title']
+
+        #pd.append must be stored into a new place, otherwise nothing happens
+        self.Music = self.Music.append(current_music_data, ignore_index = True)
+        self.tags[path] = song_tag
+        
           
     #stores all music info from path
     def load(self, path):
@@ -147,3 +171,17 @@ class Music_Dataframe:
         for music_path in song_paths:
             tag = TinyTag.get(music_path)
             self.tags[music_path] = tag
+
+    def clear_all_youtube_links(self):
+        """
+        clears All Youtube links (and related tags)
+        """
+        bool_matching_songs = self.Music['path'].str.contains("https://")
+        matching_songs = self.Music[bool_matching_songs]
+
+        youtube_links = matching_songs['path'].to_list()
+
+        for link in youtube_links:
+            self.tags.pop('link', None)
+
+        self.Music = self.Music[~bool_matching_songs]
