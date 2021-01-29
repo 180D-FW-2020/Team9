@@ -38,7 +38,7 @@ Setup/Project Dependencies Pages will be re-organized once it is finalized.
 - python-vlc (pip install python-vlc)
 - pafy (pip install pafy)
 - youtube-dl (pip install youtube_dl)
-- Youtube-Search (pip install youtube-search)
+- Youtube-Search-Python (pip install youtube-search-python)
 - TinyTag (pip install tinytag)
 - Pandas (pip install pandas)
 
