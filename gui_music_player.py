@@ -362,9 +362,11 @@ class FrameApp(Frame):
 
     def receive_channel(self):
         input = self.RChannel.get()
-        self.receiver_topic = self.default_topic + str(input)
+        self.client.unsubscribe(self.receiver_topic) #unsubscribe from previous topic 
+
+        self.receiver_topic = self.default_topic + str(input) #change topic of receiver
         self.client.subscribe(self.receiver_topic)
-        print("the receriver channel name has been changed to: " +
+        print("the receiver channel name has been changed to: " +
               self.receiver_topic)
 
     def receive(self):
