@@ -11,7 +11,8 @@ class MQTTTransmitter:
         #self.broker = 'mqtt.eclipse.org'
         self.broker = 'broker.emqx.io'
         self.port = 1883
-        self.topic = "/ECE180DA/Team9/"
+        self.default_topic = "/ECE180DA/Team9/"
+        self.topic = self.default_topic
         self.client_id = 'python-mqtt'+str(random.randint(0, 1000))
         self.command = None
         self.songname = None
@@ -40,6 +41,9 @@ class MQTTTransmitter:
 
     def setSongtime(self, songtime):
         self.songtime = songtime
+
+    def setTopic(self, new_topic):
+        self.topic = self.default_topic + new_topic
 
     def publish(self, client):
         msg_count = 0
