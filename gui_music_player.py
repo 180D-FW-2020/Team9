@@ -23,12 +23,43 @@ from youtubesearchpython import VideosSearch
 
 running_subprocesses = []
 
+pp_indicator = 0
 
 class FrameApp(Frame):
     def __init__(self, parent):
         super(FrameApp, self).__init__(parent)
 
-        self.grid()
+        # Setup window frame
+        root.title("Smartify Player")
+        root.geometry("255x360")
+
+        # Configure menu bar
+        smartify_menu = Menu(root)
+        root.config(menu=smartify_menu)
+
+        # Create menu bar items
+        file_menu = Menu(smartify_menu)
+        smartify_menu.add_cascade(label="File", menu=file_menu)
+
+        file_menu.add_command(label="Add Song Directory", command=self.add_to_list)
+        
+        emotion_menu = Menu(smartify_menu)
+        smartify_menu.add_cascade(label="Emotion", menu=emotion_menu)
+
+        emotion_menu.add_command(label="Export Emotion Data", command=self.export_csv)
+        emotion_menu.add_command(label="Import Emotion Data", command=self.import_csv)
+        emotion_menu.add_command(label="Run Emotion Detection", command=self.thread_detect_user_emotion)
+
+        player_menu = Menu(smartify_menu)
+        smartify_menu.add_cascade(label="Player", menu=player_menu)
+
+        player_menu.add_command(label="Play/Pause", command=self.play_pause_music)
+        player_menu.add_command(label="Previous", command=self.previous_song)
+        player_menu.add_command(label="Next", command=self.next_song)
+        player_menu.add_command(label="Stop", command=self.stop)
+        player_menu.add_command(label="Play Random Song", command=self.play_random_playlist)
+
+        self.grid(padx=20, pady=20)
         self.player = VLC_Audio_Player()
         self.df_songs = Music_Dataframe()
 
@@ -52,72 +83,55 @@ class FrameApp(Frame):
         self.client = self.initialize_mqtt()  # connect to broker and subscribe
 
         self.emotion = 4
-        self.emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful",
-                             3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
+        self.emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful", 3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
 
         # GUI code below
-        self.button_play_pause = Button(
-            self, text="Play/Pause", command=self.play_pause_music, width=20)
-        self.button_play_pause.grid(row=1, column=0)
+        self.button_play_pause = Button(self, text="Play", command=self.play_pause_music, width=20)
+        self.button_play_pause.grid(row=1, column=0, columnspan=3, sticky=W)
 
-        self.button_stop = Button(
-            self, text="Stop", command=self.stop, width=20)
-        self.button_stop.grid(row=2, column=0)
+        self.button_stop = Button(self, text="Stop", command=self.stop, width=20)
+        self.button_stop.grid(row=2, column=0, columnspan=3, sticky=W)
 
-        self.button_previous = Button(self, text="Previous", command=self.previous_song,
-                                      width=20)
-        self.button_previous.grid(row=3, column=0)
+        self.button_previous = Button(self, text="Previous", command=self.previous_song, width=8)
+        self.button_previous.grid(row=3, column=0, sticky=W)
 
-        self.button_next = Button(
-            self, text="Next", command=self.next_song, width=20)
-        self.button_next.grid(row=4, column=0)
+        self.button_next = Button(self, text="Next", command=self.next_song, width=8)
+        self.button_next.grid(row=3, column=1, columnspan=2, sticky=W)
 
-        self.button_add_songs = Button(self, text="Add Song Directory", command=self.add_to_list,
-                                       width=20)
-        self.button_add_songs.grid(row=5, column=0)
+        # self.button_add_songs = Button(self, text="Add Song Directory", command=self.add_to_list, width=20)
+        # self.button_add_songs.grid(row=5, column=0)
 
-        self.button_add_songs = Button(self, text="Random Playlist", command=self.play_random_playlist,
-                                       width=20)
-        self.button_add_songs.grid(row=6, column=0)
+        self.button_add_songs = Button(self, text="Random Playlist", command=self.play_random_playlist, width=20)
+        self.button_add_songs.grid(row=5, column=0, columnspan=3, sticky=W)
 
-        self.button_test = Button(self, text="Test Button", command=self.test,
-                                  width=20)
-        self.button_test.grid(row=7, column=0)
+        self.button_emotion_detection = Button(self, text="Detect Emotion!", command=self.thread_detect_user_emotion, width=20)
+        self.button_emotion_detection.grid(row=7, column=0, columnspan=3, sticky=W)
 
-        self.button_transmit = Button(self, text="Transmit ON/OFF", command=self.thread_transmit,
-                                      width=20)
-        self.button_transmit.grid(row=8, column=0)
+        # self.button_test = Button(self, text="Test Button", command=self.test, width=20)
+        # self.button_test.grid(row=8, column=0)
 
-        self.TChannel = Entry(self)
-        self.TChannel.grid(row=8, column=1)
-        self.button_TChannel = Button(
-            self, text="Load Transmitter Channel", command=self.transmit_channel, width=20)
-        self.button_TChannel.grid(row=8, column=2)
+        self.button_transmit = Button(self, text="Transmitter ON/OFF", command=self.thread_transmit, width=20)
+        self.button_transmit.grid(row=9, column=0, columnspan=3, sticky=W)
+        self.TChannel = Entry(self, width=16)
+        self.TChannel.grid(row=10, column=0, columnspan=2, sticky=W)
+        self.button_TChannel = Button(self, text="Load", command=self.transmit_channel, width=2)
+        self.button_TChannel.grid(row=10, column=2, sticky=W)
 
-        self.button_receive = Button(self, text="Receive ON/OFF", command=self.receive,
-                                     width=20)
-        self.button_receive.grid(row=9, column=0)
+        self.button_receive = Button(self, text="Receiver ON/OFF", command=self.receive, width=20)
+        self.button_receive.grid(row=12, column=0, columnspan=3, sticky=W)
+        self.RChannel = Entry(self, width=16)
+        self.RChannel.grid(row=13, column=0, columnspan=2, sticky=W)
+        self.button_RChannel = Button(self, text="Load", command=self.receive_channel, width=2)
+        self.button_RChannel.grid(row=13, column=2, sticky=W)
 
-        self.RChannel = Entry(self)
-        self.RChannel.grid(row=9, column=1)
-        self.button_RChannel = Button(
-            self, text="Load Receiver Channel", command=self.receive_channel, width=20)
-        self.button_RChannel.grid(row=9, column=2)
+        # self.button_export_csv = Button(self, text="Export Smartify Data", command=self.export_csv, width=20)
+        # self.button_export_csv.grid(row=11, column=0)
 
-        self.button_emotion_detection = Button(
-            self, text="Detect Emotion!", command=self.thread_detect_user_emotion, width=20)
-        self.button_emotion_detection.grid(row=10, column=0)
-
-        self.button_export_csv = Button(
-            self, text="Export Smartify Data", command=self.export_csv, width=20)
-        self.button_export_csv.grid(row=11, column=0)
-
-        self.button_import_csv = Button(
-            self, text="Import Smartify Data", command=self.import_csv, width=20)
-        self.button_import_csv.grid(row=12, column=0)
+        # self.button_import_csv = Button(self, text="Import Smartify Data", command=self.import_csv, width=20)
+        # self.button_import_csv.grid(row=12, column=0)
 
         self.label1 = Label(self)
-        self.label1.grid(row=14, column=0)
+        self.label1.grid(row=18, column=0)
 
         # TODO: Make progressbar, delete songs from playlist, amplify volume
 
@@ -130,11 +144,10 @@ class FrameApp(Frame):
         # Progress Bar
         self.scale_var = DoubleVar()
         self.timeslider_last_val = ""
-        self.timeslider = Scale(self, variable=self.scale_var,
-                                from_=0, to=1000, orient=HORIZONTAL, length=500)
+        self.timeslider = Scale(self, variable=self.scale_var, from_=0, to=1000, orient=HORIZONTAL, length=200)
         # Update only on Button Release
         self.timeslider.bind("<ButtonRelease-1>", self.scale_sel)
-        self.timeslider.grid(row=13, column=0)
+        self.timeslider.grid(row=19, column=0, columnspan=3)
 
         self.timer = ttkTimer(self.OnTimer, 1.0)
         self.timer.start()  # start Thread
@@ -252,8 +265,10 @@ class FrameApp(Frame):
         Plays song if Paused, Pauses song if Playing.
         """
         if self.player.is_playing():
+            self.button_play_pause.configure(text="Play")
             self.player.pause()
         else:
+            self.button_play_pause.configure(text="Pause")
             self.player.play()
 
     def stop(self):
