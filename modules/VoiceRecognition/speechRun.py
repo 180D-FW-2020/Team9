@@ -3,9 +3,13 @@
 # run with "python -m VoiceRecognition.speechRun" in /modules/ (For now!)
 from MQTT.transmitSong import MQTTTransmitter
 from VoiceRecognition.speechGet import Voice_Recognition
+import sys
 print("Please enter your voice command")
 voiceInstance = Voice_Recognition()
 transmitterInstance = MQTTTransmitter()
+if len(sys.argv) == 2:
+    topic = sys.argv[1]
+    transmitterInstance.setTopic(topic)
 voiceInstance.speechGet()
 transmitterInstance.setCommand(voiceInstance.getCommand())
 while voiceInstance.getCommand() == "Error":
