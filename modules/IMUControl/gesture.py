@@ -6,6 +6,8 @@ import datetime
 import os
 from MQTT.transmitSong import MQTTTransmitter
 
+import sys
+
 ### IMPORTANT ###
 #Make sure that this file location is put into the directory below
 #pi/BerryIMU/python-BerryIMU-gyro-accel-compass-filters
@@ -41,6 +43,10 @@ pastGYRx = 0
 pastGYRz = 0
 count = 0
 transmitterInstance = MQTTTransmitter()
+
+if len(sys.argv) == 2:
+    topic = sys.argv[1]
+    transmitterInstance.setTopic(topic)
 
     
 def sendIMU(command):
