@@ -18,10 +18,10 @@ For the current state of the Project, these are the main components:
 To run the player, simply run with *python gui_music_player.py*
 
 **IMU controller** -> */modules/IMUControl/gesture.py* 
-Run with *python -m IMUControl.gesture* with pwd(current directory) in /modules
+Run with *python -m IMUControl.gesture [optional_room_name]* with pwd(current directory) in /modules
 
 **Voice Controller** -> */modules/VoiceRecognition/speechRun.py*  
-Run with *python -m VoiceRecognition.speechRun* in /modules 
+Run with *python -m VoiceRecognition.speechRun [optional_room_name]* in /modules 
 
 To use **Emotion_Detection** Feature in the Music Player, model.h5 is required.  
 Link to the most recent version of model.h5 will be inside *modules/emotionDetection/EmotionDetection_README.md*  
