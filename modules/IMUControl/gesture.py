@@ -44,7 +44,7 @@ pastGYRz = 0
 count = 0
 transmitterInstance = MQTTTransmitter()
 
-if sys.argc == 2:
+if len(sys.argv) == 2:
     topic = sys.argv[1]
     transmitterInstance.setTopic(topic)
 
