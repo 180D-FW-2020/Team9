@@ -435,7 +435,7 @@ class FrameApp(Frame):
         elif command == "TOGGLE":
             self.play_pause_music()
         elif command == "SKIPTIME":
-            self.skip_time(int(songtime)*1000)  # time to skip is in ms
+            self.skip_time(songtime)
         elif command == "NEXT":
             self.next_song()
         elif command == "PREV":
