@@ -4,6 +4,7 @@
 import sys
 from MQTT.transmitSong import MQTTTransmitter
 from VoiceRecognition.speechGet import Voice_Recognition
+import sys
 print("Please enter your voice command")
 voiceInstance = Voice_Recognition()
 transmitterInstance = MQTTTransmitter()

@@ -86,38 +86,38 @@ class FrameApp(Frame):
         self.emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful", 3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
 
         # GUI code below
-        self.button_play_pause = Button(self, text="Play", command=self.play_pause_music, width=20)
+        self.button_play_pause = Button(self, text="▶️", command=self.play_pause_music, height=2, width=20)
         self.button_play_pause.grid(row=1, column=0, columnspan=3, sticky=W)
 
-        self.button_stop = Button(self, text="Stop", command=self.stop, width=20)
+        self.button_stop = Button(self, text="⏹", command=self.stop, height=2, width=20)
         self.button_stop.grid(row=2, column=0, columnspan=3, sticky=W)
 
-        self.button_previous = Button(self, text="Previous", command=self.previous_song, width=8)
+        self.button_previous = Button(self, text="⏮", command=self.previous_song, height=2, width=8)
         self.button_previous.grid(row=3, column=0, sticky=W)
 
-        self.button_next = Button(self, text="Next", command=self.next_song, width=8)
+        self.button_next = Button(self, text="⏭", command=self.next_song, height=2, width=8)
         self.button_next.grid(row=3, column=1, columnspan=2, sticky=W)
 
         # self.button_add_songs = Button(self, text="Add Song Directory", command=self.add_to_list, width=20)
         # self.button_add_songs.grid(row=5, column=0)
 
-        self.button_add_songs = Button(self, text="Random Playlist", command=self.play_random_playlist, width=20)
+        self.button_add_songs = Button(self, text="🔀", command=self.play_random_playlist, height=2, width=20)
         self.button_add_songs.grid(row=5, column=0, columnspan=3, sticky=W)
 
-        self.button_emotion_detection = Button(self, text="Detect Emotion!", command=self.thread_detect_user_emotion, width=20)
+        self.button_emotion_detection = Button(self, text="Detect Emotion", command=self.thread_detect_user_emotion, width=20)
         self.button_emotion_detection.grid(row=7, column=0, columnspan=3, sticky=W)
 
         # self.button_test = Button(self, text="Test Button", command=self.test, width=20)
         # self.button_test.grid(row=8, column=0)
 
-        self.button_transmit = Button(self, text="Transmitter ON/OFF", command=self.thread_transmit, width=20)
+        self.button_transmit = Button(self, text="Transmitter: Toggle ON", command=self.thread_transmit, width=20)
         self.button_transmit.grid(row=9, column=0, columnspan=3, sticky=W)
         self.TChannel = Entry(self, width=16)
         self.TChannel.grid(row=10, column=0, columnspan=2, sticky=W)
         self.button_TChannel = Button(self, text="Load", command=self.transmit_channel, width=2)
         self.button_TChannel.grid(row=10, column=2, sticky=W)
 
-        self.button_receive = Button(self, text="Receiver ON/OFF", command=self.receive, width=20)
+        self.button_receive = Button(self, text="Receiver: Toggle ON", command=self.receive, width=20)
         self.button_receive.grid(row=12, column=0, columnspan=3, sticky=W)
         self.RChannel = Entry(self, width=16)
         self.RChannel.grid(row=13, column=0, columnspan=2, sticky=W)
@@ -265,10 +265,10 @@ class FrameApp(Frame):
         Plays song if Paused, Pauses song if Playing.
         """
         if self.player.is_playing():
-            self.button_play_pause.configure(text="Play")
+            self.button_play_pause.configure(text="▶️")
             self.player.pause()
         else:
-            self.button_play_pause.configure(text="Pause")
+            self.button_play_pause.configure(text="⏸")
             self.player.play()
 
     def stop(self):
@@ -330,9 +330,9 @@ class FrameApp(Frame):
         Sets self.transmit_msg to On/Off (Switch for Transmitter, not atomic)
         If transmitter is turned on, sends a message to client every interval.
         """
-
         if self.transmit_msg == True:
             self.transmit_msg = False
+            self.button_transmit.configure(text="Trasmitter: Toggle ON")
             print("Transmitter Turned Off")
 
         else:
@@ -343,6 +343,7 @@ class FrameApp(Frame):
                 self.transmitter_thread = Thread(target=self.transmit)
                 self.transmitter_thread.start()
 
+            self.button_transmit.configure(text="Trasmitter: Toggle OFF")
             print("Transmitter Turned On")
 
     def transmit_channel(self):
@@ -393,10 +394,12 @@ class FrameApp(Frame):
         """
         if self.receive_msg == False:
             self.client.loop_start()
+            self.button_receive.configure(text="Receiver: Toggle OFF")
             print("Receiver Turned On!")
             self.receive_msg = True
         else:
             self.client.loop_stop()
+            self.button_receive.configure(text="Receiver: Toggle ON")
             print("Receiver Turned Off!")
             self.receive_msg = False
 
