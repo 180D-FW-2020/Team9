@@ -119,3 +119,23 @@ class VLC_Audio_Player:
             return (self.list_songpaths[index_of_media], curr_time)
         except IndexError:
             return ("", curr_time)
+
+    def audio_set_volume(self, new_volume):
+        """
+        Sets audio volume (in %).
+        Error if given values outside range [0, 100]
+        """
+        curr_player = self.listPlayer.get_media_player()
+        curr_player.audio_set_volume(new_volume)
+        return
+    
+    def audio_get_volume(self):
+        """
+        Returns: Audio volume % of player (0-100)
+        """
+        curr_player = self.listPlayer.get_media_player()
+        return curr_player.audio_get_volume()
+
+    def mute(self):
+        curr_player = self.listPlayer.get_media_player()
+        curr_player.audio_set_volume(0)

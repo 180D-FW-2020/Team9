@@ -153,8 +153,8 @@ class FrameApp(Frame):
         # self.button_add_songs = Button(self, text="Add Song Directory", command=self.add_to_list, width=20)
         # self.button_add_songs.grid(row=5, column=0)
 
-        # self.button_test = Button(self, text="Test Button", command=self.test, width=20)
-        # self.button_test.grid(row=8, column=0)
+        self.button_test = Button(self, text="Test Button", command=self.test, width=20)
+        self.button_test.grid(row=8, column=0)
 
         # self.button_export_csv = Button(self, text="Export Smartify Data", command=self.export_csv, width=20)
         # self.button_export_csv.grid(row=11, column=0)
@@ -185,6 +185,12 @@ class FrameApp(Frame):
 
         self.timer = ttkTimer(self.OnTimer, 1.0)
         self.timer.start()  # start Thread
+
+        self.volume_var = IntVar()
+        self.volslider = Scale(self, variable=self.volume_var, command=self.volume_sel, 
+                                from_=0, to=100, orient=HORIZONTAL, length=100)
+
+        self.volslider.grid(row=20, column=0, columnspan=3)
 
     """
     MQTT COMMANDS
@@ -268,6 +274,13 @@ class FrameApp(Frame):
         if self.timeslider_last_val != sval:
             mval = "%.0f" % (nval * 1000)
             self.player.set_time(int(mval))  # expects milliseconds
+
+    def volume_sel(self, evt):
+        if self.player.listPlayer.get_media_player() == None: #nothing being played
+            return
+        volume = self.volume_var.get()
+        if self.player.audio_set_volume(volume) == -1:
+            print("Failed to set volume")
 
     def add_to_list(self):
         """
@@ -353,10 +366,7 @@ class FrameApp(Frame):
         """
         Whatever function we want to test
         """
-        print("Current Number Threads:", threading.active_count())
-        self.print_current_song_info()
-        self.df_songs.clear_all_youtube_links()
-        print("Youtube Links Cleared from Dataframe")
+        self.player.change_volume(-10)
 
     def thread_transmit(self):
         """
