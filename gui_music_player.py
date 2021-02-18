@@ -31,7 +31,7 @@ class FrameApp(Frame):
 
         # Setup window frame
         root.title("Smartify Player")
-        root.geometry("255x360")
+        root.geometry("470x280")
 
         # Configure menu bar
         smartify_menu = Menu(root)
@@ -85,44 +85,59 @@ class FrameApp(Frame):
         self.emotion = 4
         self.emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful", 3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
 
+        # --------------
         # GUI code below
-        self.button_play_pause = Button(self, text="▶️", command=self.play_pause_music, height=2, width=20)
-        self.button_play_pause.grid(row=1, column=0, columnspan=3, sticky=W)
+        # --------------
 
-        self.button_stop = Button(self, text="⏹", command=self.stop, height=2, width=20)
-        self.button_stop.grid(row=2, column=0, columnspan=3, sticky=W)
+        self.button_transmit = Button(self, text="Transmitter: OFF", command=self.thread_transmit, width=12)
+        self.button_transmit.grid(row=1, column=0)
+        self.TChannel = Entry(self, width=14)
+        self.TChannel.grid(row=2, column=0)
+        self.button_TChannel = Button(self, text="Load", command=self.transmit_channel, width=12)
+        self.button_TChannel.grid(row=3, column=0)
 
-        self.button_previous = Button(self, text="⏮", command=self.previous_song, height=2, width=8)
-        self.button_previous.grid(row=3, column=0, sticky=W)
+        self.button_receive = Button(self, text="Receiver: ON", command=self.receive, width=12)
+        self.button_receive.grid(row=1, column=2)
+        self.RChannel = Entry(self, width=14)
+        self.RChannel.grid(row=2, column=2)
+        self.button_RChannel = Button(self, text="Load", command=self.receive_channel, width=12)
+        self.button_RChannel.grid(row=3, column=2)
 
-        self.button_next = Button(self, text="⏭", command=self.next_song, height=2, width=8)
-        self.button_next.grid(row=3, column=1, columnspan=2, sticky=W)
+        self.button_emotion_detection = Button(self, text="Detect Emotion", command=self.thread_detect_user_emotion, width=12)
+        self.button_emotion_detection.grid(row=4, column=0)
+
+        # Voice recognition
+        # row 4, column 2
+
+        self.button_add_songs = Button(self, text="🔀", command=self.play_random_playlist, width=12)
+        self.button_add_songs.grid(row=3, column=1)
+
+        # Song name
+        # row 5, column 0, columnspan 3
+
+        self.button_play_pause = Button(self, text="▶️", command=self.play_pause_music, width=12)
+        self.button_play_pause.grid(row=6, column=1)
+
+        self.button_previous = Button(self, text="⏮", command=self.previous_song, width=12)
+        self.button_previous.grid(row=6, column=0)
+
+        self.button_next = Button(self, text="⏭", command=self.next_song, width=12)
+        self.button_next.grid(row=6, column=2)
+
+        self.button_stop = Button(self, text="⏹", command=self.stop, width=12)
+        self.button_stop.grid(row=7, column=1)
+
+        # Volume minus
+        # row 7, column 0
+
+        # Volume plus
+        # row 7, column 2
 
         # self.button_add_songs = Button(self, text="Add Song Directory", command=self.add_to_list, width=20)
         # self.button_add_songs.grid(row=5, column=0)
 
-        self.button_add_songs = Button(self, text="🔀", command=self.play_random_playlist, height=2, width=20)
-        self.button_add_songs.grid(row=5, column=0, columnspan=3, sticky=W)
-
-        self.button_emotion_detection = Button(self, text="Detect Emotion", command=self.thread_detect_user_emotion, width=20)
-        self.button_emotion_detection.grid(row=7, column=0, columnspan=3, sticky=W)
-
         # self.button_test = Button(self, text="Test Button", command=self.test, width=20)
         # self.button_test.grid(row=8, column=0)
-
-        self.button_transmit = Button(self, text="Transmitter: Toggle ON", command=self.thread_transmit, width=20)
-        self.button_transmit.grid(row=9, column=0, columnspan=3, sticky=W)
-        self.TChannel = Entry(self, width=16)
-        self.TChannel.grid(row=10, column=0, columnspan=2, sticky=W)
-        self.button_TChannel = Button(self, text="Load", command=self.transmit_channel, width=2)
-        self.button_TChannel.grid(row=10, column=2, sticky=W)
-
-        self.button_receive = Button(self, text="Receiver: Toggle ON", command=self.receive, width=20)
-        self.button_receive.grid(row=12, column=0, columnspan=3, sticky=W)
-        self.RChannel = Entry(self, width=16)
-        self.RChannel.grid(row=13, column=0, columnspan=2, sticky=W)
-        self.button_RChannel = Button(self, text="Load", command=self.receive_channel, width=2)
-        self.button_RChannel.grid(row=13, column=2, sticky=W)
 
         # self.button_export_csv = Button(self, text="Export Smartify Data", command=self.export_csv, width=20)
         # self.button_export_csv.grid(row=11, column=0)
@@ -131,7 +146,7 @@ class FrameApp(Frame):
         # self.button_import_csv.grid(row=12, column=0)
 
         self.label1 = Label(self)
-        self.label1.grid(row=18, column=0)
+        self.label1.grid(row=10, column=0)
 
         # TODO: Make progressbar, delete songs from playlist, amplify volume
 
@@ -144,10 +159,10 @@ class FrameApp(Frame):
         # Progress Bar
         self.scale_var = DoubleVar()
         self.timeslider_last_val = ""
-        self.timeslider = Scale(self, variable=self.scale_var, from_=0, to=1000, orient=HORIZONTAL, length=200)
+        self.timeslider = Scale(self, variable=self.scale_var, from_=0, to=1000, orient=HORIZONTAL, length=410)
         # Update only on Button Release
         self.timeslider.bind("<ButtonRelease-1>", self.scale_sel)
-        self.timeslider.grid(row=19, column=0, columnspan=3)
+        self.timeslider.grid(row=11, column=0, columnspan=3)
 
         self.timer = ttkTimer(self.OnTimer, 1.0)
         self.timer.start()  # start Thread
@@ -332,7 +347,7 @@ class FrameApp(Frame):
         """
         if self.transmit_msg == True:
             self.transmit_msg = False
-            self.button_transmit.configure(text="Trasmitter: Toggle ON")
+            self.button_transmit.configure(text="Trasmitter: OFF")
             print("Transmitter Turned Off")
 
         else:
@@ -343,7 +358,7 @@ class FrameApp(Frame):
                 self.transmitter_thread = Thread(target=self.transmit)
                 self.transmitter_thread.start()
 
-            self.button_transmit.configure(text="Trasmitter: Toggle OFF")
+            self.button_transmit.configure(text="Trasmitter: ON")
             print("Transmitter Turned On")
 
     def transmit_channel(self):
@@ -438,7 +453,7 @@ class FrameApp(Frame):
         elif command == "TOGGLE":
             self.play_pause_music()
         elif command == "SKIPTIME":
-            self.skip_time(int(songtime)*1000)  # time to skip is in ms
+            self.skip_time(songtime)
         elif command == "NEXT":
             self.next_song()
         elif command == "PREV":
