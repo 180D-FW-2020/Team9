@@ -71,6 +71,7 @@ class FrameApp(Frame):
         self.grid(padx=20, pady=20)
         self.player = VLC_Audio_Player()
         self.df_songs = Music_Dataframe()
+        self.df_songs.import_csv(".smartify.csv") #import from default path
 
         self.voice = Voice_Recognition()
         self.voice_thread = Thread(target=self.speechGet)
@@ -696,6 +697,9 @@ def _quit():
     print("Closing App...")
     for subprocess in running_subprocesses:
         subprocess.terminate()  # kill all running subprocesses
+
+    app.df_songs.clear_all_youtube_links()
+    app.df_songs.export_csv(file_path=".smartify.csv")
 
     root = Tk()
     root.quit()     # stops mainloop
