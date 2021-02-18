@@ -18,12 +18,15 @@ from modules.MQTT.transmitSong import MQTTTransmitter
 import json
 from paho.mqtt import client as mqtt_client
 
+from modules.VoiceRecognition.speechGet import Voice_Recognition
+
 import pafy
 from youtubesearchpython import VideosSearch
 
 running_subprocesses = []
 
 pp_indicator = 0
+
 
 class FrameApp(Frame):
     def __init__(self, parent):
@@ -41,14 +44,18 @@ class FrameApp(Frame):
         file_menu = Menu(smartify_menu)
         smartify_menu.add_cascade(label="File", menu=file_menu)
 
-        file_menu.add_command(label="Add Song Directory", command=self.add_to_list)
-        
+        file_menu.add_command(label="Add Song Directory",
+                              command=self.add_to_list)
+
         emotion_menu = Menu(smartify_menu)
         smartify_menu.add_cascade(label="Emotion", menu=emotion_menu)
 
-        emotion_menu.add_command(label="Export Emotion Data", command=self.export_csv)
-        emotion_menu.add_command(label="Import Emotion Data", command=self.import_csv)
-        emotion_menu.add_command(label="Run Emotion Detection", command=self.thread_detect_user_emotion)
+        emotion_menu.add_command(
+            label="Export Emotion Data", command=self.export_csv)
+        emotion_menu.add_command(
+            label="Import Emotion Data", command=self.import_csv)
+        emotion_menu.add_command(
+            label="Run Emotion Detection", command=self.thread_detect_user_emotion)
 
         player_menu = Menu(smartify_menu)
         smartify_menu.add_cascade(label="Player", menu=player_menu)
@@ -63,8 +70,12 @@ class FrameApp(Frame):
         self.player = VLC_Audio_Player()
         self.df_songs = Music_Dataframe()
 
+        self.voice = Voice_Recognition()
+        self.voice_thread = Thread(target=self.speechGet)
+        self.voice_on = False
+
         # Default Topic for MQTT is "/ECE180DA/Team9/"
-        self.default_topic =  "/ECE180DA/Team9/"
+        self.default_topic = "/ECE180DA/Team9/"
 
         # MQTT Transmitter (from MQTT module)
         self.transmitter = MQTTTransmitter()
@@ -84,6 +95,7 @@ class FrameApp(Frame):
 
         self.emotion = 4
         self.emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful", 3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
+
 
         # --------------
         # GUI code below
@@ -108,6 +120,8 @@ class FrameApp(Frame):
 
         # Voice recognition
         # row 4, column 2
+        self.button_voice = Button(self, text="Voice Command", command=self.thread_voice, width=12)
+        self.button_voice.grid(row=4, column=2)
 
         self.button_add_songs = Button(self, text="🔀", command=self.play_random_playlist, width=12)
         self.button_add_songs.grid(row=3, column=1)
@@ -160,9 +174,10 @@ class FrameApp(Frame):
         self.scale_var = DoubleVar()
         self.timeslider_last_val = ""
         self.timeslider = Scale(self, variable=self.scale_var, from_=0, to=1000, orient=HORIZONTAL, length=410)
+
         # Update only on Button Release
         self.timeslider.bind("<ButtonRelease-1>", self.scale_sel)
-        self.timeslider.grid(row=11, column=0, columnspan=3)
+        self.timeslider.grid(row=19, column=0, columnspan=3)
 
         self.timer = ttkTimer(self.OnTimer, 1.0)
         self.timer.start()  # start Thread
@@ -207,8 +222,7 @@ class FrameApp(Frame):
         if rc == 0:
             print("Connected to MQTT Broker!")
         else:
-            print(
-                "Failed to connect to MQTT Broker, Transmit/Recieve will not work, return code %d\n", rc)
+            print("Failed to connect to MQTT Broker, Transmit/Recieve will not work, return code %d\n", rc)
 
     def on_message(self, client, userdata, msg):
         """
@@ -364,8 +378,7 @@ class FrameApp(Frame):
     def transmit_channel(self):
         input = self.TChannel.get()
         self.transmitter.topic = self.default_topic + str(input)
-        print("the transmitter channel name has been changed to: " +
-              self.transmitter.topic)
+        print("the transmitter channel name has been changed to: " + self.transmitter.topic)
 
     def transmit(self):
         """
@@ -393,12 +406,13 @@ class FrameApp(Frame):
 
     def receive_channel(self):
         input = self.RChannel.get()
-        self.client.unsubscribe(self.receiver_topic) #unsubscribe from previous topic 
+        # unsubscribe from previous topic
+        self.client.unsubscribe(self.receiver_topic)
 
-        self.receiver_topic = self.default_topic + str(input) #change topic of receiver
+        self.receiver_topic = self.default_topic + \
+            str(input)  # change topic of receiver
         self.client.subscribe(self.receiver_topic)
-        print("the receiver channel name has been changed to: " +
-              self.receiver_topic)
+        print("the receiver channel name has been changed to: " + self.receiver_topic)
 
     def receive(self):
         """
@@ -440,11 +454,9 @@ class FrameApp(Frame):
             if player_song_name == songname:  # songname matches
                 # only change timestamp of song when off by more than 5 sec.
                 if abs(player_songtime - songtime) > 5000:
-                    self.play_song(songname, artist=artistname,
-                                   start_time=int(songtime))
+                    self.play_song(songname, artist=artistname, start_time=int(songtime))
             else:
-                self.play_song(songname, artist=artistname,
-                               start_time=int(songtime))
+                self.play_song(songname, artist=artistname, start_time=int(songtime))
 
         elif command == "PLAY":
             self.play()
@@ -468,19 +480,19 @@ class FrameApp(Frame):
         Otherwise, the song is played from the current playlist (if it is on the playlist)
         If the song is not on current playlist, a random playlist is generated (with the song), and is played
         """
-        #Don't do anything on when given null
+        # Don't do anything on when given null
         if title is None:
             return
 
         song_path = self.df_songs.find_song(title=title, artist=artist)
 
-        #CHANGE THIS LINE LATER S0 we can let user decide:
-        self.enable_youtube_search= True
+        # CHANGE THIS LINE LATER S0 we can let user decide:
+        self.enable_youtube_search = True
 
         if song_path == None:
             if self.enable_youtube_search:
-                song_info = {'title':title, 'artist': artist}
-                #search song on separate thread
+                song_info = {'title': title, 'artist': artist}
+                # search song on separate thread
                 youtube_link = self.search_song_online(song_info)
                 video = pafy.new(youtube_link)
                 audio = video.getbestaudio()
@@ -488,7 +500,7 @@ class FrameApp(Frame):
 
                 self.df_songs.insert(audio_link, song_info)
 
-                #Now play the song
+                # Now play the song
                 self.set_playlist_as_random_playlist()  # random playlist of ALL songs
                 played = self.player.play_song_from_current_playlist(
                     song_path, start_time=start_time)
@@ -502,20 +514,41 @@ class FrameApp(Frame):
                 self.set_playlist_as_random_playlist()  # random playlist of ALL songs
                 played = self.player.play_song_from_current_playlist(
                     song_path, start_time=start_time)
-    
+
+    def thread_voice(self):
+        """
+        Sets self.voice_msg to On/Off
+        If voice is turned on, gets a voice command from user until a valid one is received.
+        """
+        if self.voice_on == False:
+                # do nothing if user presses button while we're currently getting the voice command
+            self.voice_on = True
+            if not self.voice_thread.is_alive():
+                self.voice_thread = Thread(target=self.speechGet)
+                self.voice_thread.start()
+
+    def speechGet(self):
+        print("Please enter your voice command.")
+        self.voice.speechGet()
+        while self.voice.getCommand() == "ERROR":
+            print("Unrecognized input. Please enter your voice command again.")
+            self.voice.speechGet()
+        print("Got it. We're on it now.")
+        self.parse_command(self.voice.getDict())
+        self.voice_on = False
+
     def search_song_online(self, song_info):
         """
         input: song_info - dictionary of metadata
         returns: youtube_link of video (of Youtube video)
         """
-        search_str = str(song_info['title'])+ " " + str(song_info['artist'])
+        search_str = str(song_info['title']) + " " + str(song_info['artist'])
 
         song_search = VideosSearch(search_str, limit=5)
 
         video_link = song_search.result()['result'][0]['link']
 
         return video_link
-
 
     def get_info_current_song(self):
         """
