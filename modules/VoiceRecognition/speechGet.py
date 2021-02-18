@@ -10,6 +10,11 @@ class Voice_Recognition:
         # any possible time value that may be required to process the command
         self.songtime = 0
 
+    def getDict(self):
+        voiceDict = {"command": self.command, "songname": self.songname,
+                     "artistname": self.artistname, "songtime": self.songtime}
+        return voiceDict
+
     def getCommand(self):
         return self.command
 
