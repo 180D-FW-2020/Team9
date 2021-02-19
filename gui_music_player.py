@@ -60,11 +60,13 @@ class FrameApp(Frame):
         player_menu = Menu(smartify_menu)
         smartify_menu.add_cascade(label="Player", menu=player_menu)
 
-        player_menu.add_command(label="Play/Pause", command=self.play_pause_music)
+        player_menu.add_command(
+            label="Play/Pause", command=self.play_pause_music)
         player_menu.add_command(label="Previous", command=self.previous_song)
         player_menu.add_command(label="Next", command=self.next_song)
         player_menu.add_command(label="Stop", command=self.stop)
-        player_menu.add_command(label="Play Random Song", command=self.play_random_playlist)
+        player_menu.add_command(label="Play Random Song",
+                                command=self.play_random_playlist)
 
         self.grid(padx=20, pady=20)
         self.player = VLC_Audio_Player()
@@ -94,7 +96,8 @@ class FrameApp(Frame):
         self.client = self.initialize_mqtt()  # connect to broker and subscribe
 
         self.emotion = 4
-        self.emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful", 3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
+        self.emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful",
+                             3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
 
 
         # --------------
@@ -173,6 +176,7 @@ class FrameApp(Frame):
         # Progress Bar
         self.scale_var = DoubleVar()
         self.timeslider_last_val = ""
+
         self.timeslider = Scale(self, variable=self.scale_var, from_=0, to=1000, orient=HORIZONTAL, length=410)
 
         # Update only on Button Release

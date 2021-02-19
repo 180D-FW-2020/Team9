@@ -10,6 +10,11 @@ class Voice_Recognition:
         # any possible time value that may be required to process the command
         self.songtime = 0
 
+    def getDict(self):
+        voiceDict = {"command": self.command, "songname": self.songname,
+                     "artistname": self.artistname, "songtime": self.songtime}
+        return voiceDict
+
     def getCommand(self):
         return self.command
 
@@ -45,34 +50,73 @@ class Voice_Recognition:
             if len(wordsinput) == 1 and wordsinput[0] == "play":
                 self.command = "PLAY"
                 return
+            if len(wordsinput) == 1 and wordsinput[0] == "next":
+                self.command = "NEXT"
+                return
+            if len(wordsinput) == 1 and wordsinput[0] == "previous":
+                self.command = "PREV"
+                return
             # now to check if the user asked to play a certain song
             playind = -1
             byind = -1
+            atind = -1
+            secondsind = -1
+            minutesind = -1
             # find indices of 'play' and 'by' in order to pull out the song and artist names
             for i in range(0, len(wordsinput)):
                 if playind == -1 and wordsinput[i] == "play":
                     playind = i
-                if byind == -1 and wordsinput[i] == "by":
+                elif byind == -1 and wordsinput[i] == "by":
                     byind = i
-            # if the command is of the format play ____ by ___
+                elif atind == -1 and wordsinput[i] == "at":
+                    atind = i
+                elif secondsind == -1 and wordsinput[i] == "seconds":
+                    secondsind = i
+                elif minutesind == -1 and (wordsinput[i] == "minutes" or wordsinput[i] == "minute"):
+                    minutesind = i
+                    # if the command is of the format play ____ by ___
             if byind > playind + 1 and len(wordsinput) > byind + 1 and playind > -1:
                 self.command = "INPUTSONG"
                 songname = ""
                 artistname = ""
+                songtime = 0
+                artistendind = len(wordsinput)
+                if (atind > -1):
+                    artistendind = atind
                 for i in range(playind + 1, byind):
                     songname = songname + wordsinput[i] + " "
-                for i in range(byind + 1, len(wordsinput)):
+                for i in range(byind + 1, artistendind):
                     artistname = artistname + wordsinput[i] + " "
+                # if the command also says at ____ seconds (start at this time)
+                if secondsind - atind == 2 and atind > byind + 1:
+                    songtime = int(wordsinput[atind+1])*1000
+                if minutesind - atind == 2 and atind > byind + 1:
+                    if wordsinput[atind+1] == "one":
+                        songtime = 1000*60
+                    else:
+                        songtime = int(wordsinput[atind+1])*1000*60
+                self.songtime = songtime
                 songname = songname[:-1]
-                artistname = artistname[:-1]
                 self.songname = songname
+                artistname = artistname[:-1]
                 self.artistname = artistname
-                self.songtime = 0
                 return
             # check if the command is of the format skip ___ seconds
-            if len(wordsinput) == 3 and wordsinput[0] == 'skip' and wordsinput[2] == 'seconds':
+            skipyes = False
+            secminyes = False
+            if wordsinput[0] == "skip" or wordsinput[0] == "forward":
+                skipyes = True
+            if secondsind == 2 or minutesind == 2:
+                secminyes = True
+            if len(wordsinput) == 3 and skipyes and secminyes:
                 self.command = "SKIPTIME"
-                self.songtime = wordsinput[1]
+                if secondsind == 2:
+                    self.songtime = int(wordsinput[1])*1000
+                elif minutesind == 2:
+                    if wordsinput[1] == "one":
+                        self.songtime = 1000*60
+                    else:
+                        self.songtime = int(wordsinput[1])*1000*60
                 return
             # if no recognizable command is detected
             self.command = "ERROR"
