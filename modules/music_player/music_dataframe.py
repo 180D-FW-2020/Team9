@@ -198,6 +198,6 @@ class Music_Dataframe:
         youtube_links = matching_songs['path'].to_list()
 
         for link in youtube_links:
-            self.tags.pop('link', None)
+            self.tags.pop(link, None)
 
         self.Music = self.Music[~bool_matching_songs]
