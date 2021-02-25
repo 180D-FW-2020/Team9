@@ -667,6 +667,9 @@ class FrameApp(Frame):
         df_file = askopenfile()
         self.df_songs.import_csv(file_path=df_file)
 
+    def clear_smartify_data(self):
+        self.df_songs = Music_Dataframe()
+
 
 class ttkTimer(Thread):
     """a class serving same function as wxTimer... but there may be better ways to do this
