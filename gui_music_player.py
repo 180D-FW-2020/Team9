@@ -147,8 +147,8 @@ class FrameApp(Frame):
         # self.button_add_songs = Button(self, text="Add Song Directory", command=self.add_to_list, width=20)
         # self.button_add_songs.grid(row=5, column=0)
 
-        # self.button_test = Button(self, text="Test Button", command=self.test, width=20)
-        # self.button_test.grid(row=8, column=0)
+        self.button_test = Button(self, text="Test Button", command=self.test, width=20)
+        self.button_test.grid(row=8, column=0)
 
         # self.button_export_csv = Button(self, text="Export Smartify Data", command=self.export_csv, width=20)
         # self.button_export_csv.grid(row=11, column=0)
@@ -181,6 +181,7 @@ class FrameApp(Frame):
         self.timer.start()  # start Thread
 
         self.volume_var = IntVar()
+
         self.volslider = Scale(self, variable=self.volume_var, command=self.volume_sel, from_=0, to=100, orient=HORIZONTAL, length=410)
 
         self.volslider.grid(row=20, column=0, columnspan=3)
