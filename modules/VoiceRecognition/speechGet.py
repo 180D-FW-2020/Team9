@@ -41,6 +41,7 @@ class Voice_Recognition:
             # strinput = rec.recognize_sphinx(audio)
             # Karunesh: However the speech recognition seems much worse than the gooogle API
             strinput = strinput.lower()
+            print("We think you said: " + strinput)
             # convert string input into array of words
             wordsinput = strinput.split(" ")
             # check if command is play/pause
