@@ -515,7 +515,7 @@ class FrameApp(Frame):
                 # Now play the song
                 self.set_playlist_as_random_playlist()  # random playlist of ALL songs
                 played = self.player.play_song_from_current_playlist(
-                    song_path, start_time=start_time)
+                    audio_link, start_time=start_time)
             else:
                 print("Song Not Found!")
                 return
@@ -546,7 +546,9 @@ class FrameApp(Frame):
             print("Unrecognized input. Please enter your voice command again.")
             self.voice.speechGet()
         print("Got it. We're on it now.")
-        self.parse_command(self.voice.getDict())
+        command_dict = self.voice.getDict()
+        print(command_dict)
+        self.parse_command(command_dict)
         self.voice_on = False
 
     def search_song_online(self, song_info):
