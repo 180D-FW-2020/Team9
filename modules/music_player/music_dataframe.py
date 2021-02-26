@@ -158,19 +158,35 @@ class Music_Dataframe:
         And sets self.tag to Tags of paths from .csv file
         Otherwise, it does nothing (prints message)
         """
+        file_extension = os.path.splitext(file_path)[1]
+        if not os.path.isfile(file_path) or file_extension != ".csv": #Do nothing if file doesn't exist or is not csv
+            return
+
         temp_df = pd.read_csv(file_path)
         col_list = temp_df.columns.tolist()
 
-        if col_list != self.Music_cols: #do nothing if columsn don't match
+        if col_list != self.Music_cols: #do nothing if columns don't match
            return
         else:
             self.Music = temp_df
 
+        has_error = False
+
         #get all tags
         song_paths = self.Music['path'].tolist()
         for music_path in song_paths:
-            tag = TinyTag.get(music_path)
-            self.tags[music_path] = tag
+            file_extension = os.path.splitext(music_path)[1]
+            if os.path.isfile(music_path) and file_extension in self.supported_format:
+                tag = TinyTag.get(music_path)
+                self.tags[music_path] = tag
+            else: #file doesn't exist or not supported format
+                has_error = True
+                self.Music = self.Music[self.Music['path'] != music_path]
+
+        self.clear_all_youtube_links()
+
+        if has_error:
+            print("Warning: Some music files found in .csv are missing/modified")
 
     def clear_all_youtube_links(self):
         """
@@ -182,6 +198,6 @@ class Music_Dataframe:
         youtube_links = matching_songs['path'].to_list()
 
         for link in youtube_links:
-            self.tags.pop('link', None)
+            self.tags.pop(link, None)
 
         self.Music = self.Music[~bool_matching_songs]
