@@ -34,7 +34,7 @@ class FrameApp(Frame):
 
         # Setup window frame
         root.title("Smartify Player")
-        root.geometry("470x280")
+        root.geometry("470x320")
 
         # Configure menu bar
         smartify_menu = Menu(root)
@@ -44,33 +44,28 @@ class FrameApp(Frame):
         file_menu = Menu(smartify_menu)
         smartify_menu.add_cascade(label="File", menu=file_menu)
 
-        file_menu.add_command(label="Add Song Directory",
-                              command=self.add_to_list)
+        file_menu.add_command(label="Add Song Directory", command=self.add_to_list)
 
         emotion_menu = Menu(smartify_menu)
         smartify_menu.add_cascade(label="Emotion", menu=emotion_menu)
 
-        emotion_menu.add_command(
-            label="Export Emotion Data", command=self.export_csv)
-        emotion_menu.add_command(
-            label="Import Emotion Data", command=self.import_csv)
-        emotion_menu.add_command(
-            label="Run Emotion Detection", command=self.thread_detect_user_emotion)
+        emotion_menu.add_command(label="Export Emotion Data", command=self.export_csv)
+        emotion_menu.add_command(label="Import Emotion Data", command=self.import_csv)
+        emotion_menu.add_command(label="Run Emotion Detection", command=self.thread_detect_user_emotion)
 
         player_menu = Menu(smartify_menu)
         smartify_menu.add_cascade(label="Player", menu=player_menu)
 
-        player_menu.add_command(
-            label="Play/Pause", command=self.play_pause_music)
+        player_menu.add_command(label="Play/Pause", command=self.play_pause_music)
         player_menu.add_command(label="Previous", command=self.previous_song)
         player_menu.add_command(label="Next", command=self.next_song)
         player_menu.add_command(label="Stop", command=self.stop)
-        player_menu.add_command(label="Play Random Song",
-                                command=self.play_random_playlist)
+        player_menu.add_command(label="Play Random Song", command=self.play_random_playlist)
 
         self.grid(padx=20, pady=20)
         self.player = VLC_Audio_Player()
         self.df_songs = Music_Dataframe()
+        self.df_songs.import_csv(".smartify.csv") #import from default path
 
         self.voice = Voice_Recognition()
         self.voice_thread = Thread(target=self.speechGet)
@@ -96,8 +91,7 @@ class FrameApp(Frame):
         self.client = self.initialize_mqtt()  # connect to broker and subscribe
 
         self.emotion = 4
-        self.emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful",
-                             3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
+        self.emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful", 3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
 
 
         # --------------
@@ -111,7 +105,7 @@ class FrameApp(Frame):
         self.button_TChannel = Button(self, text="Load", command=self.transmit_channel, width=12)
         self.button_TChannel.grid(row=3, column=0)
 
-        self.button_receive = Button(self, text="Receiver: ON", command=self.receive, width=12)
+        self.button_receive = Button(self, text="Receiver: OFF", command=self.receive, width=12)
         self.button_receive.grid(row=1, column=2)
         self.RChannel = Entry(self, width=14)
         self.RChannel.grid(row=2, column=2)
@@ -126,7 +120,7 @@ class FrameApp(Frame):
         self.button_voice = Button(self, text="Voice Command", command=self.thread_voice, width=12)
         self.button_voice.grid(row=4, column=2)
 
-        self.button_add_songs = Button(self, text="🔀", command=self.play_random_playlist, width=12)
+        self.button_add_songs = Button(self, text="Shuffle", command=self.play_random_playlist, width=12)
         self.button_add_songs.grid(row=3, column=1)
 
         # Song name
@@ -162,9 +156,6 @@ class FrameApp(Frame):
         # self.button_import_csv = Button(self, text="Import Smartify Data", command=self.import_csv, width=20)
         # self.button_import_csv.grid(row=12, column=0)
 
-        self.label1 = Label(self)
-        self.label1.grid(row=10, column=0)
-
         # TODO: Make progressbar, delete songs from playlist, amplify volume
 
         """
@@ -181,10 +172,21 @@ class FrameApp(Frame):
 
         # Update only on Button Release
         self.timeslider.bind("<ButtonRelease-1>", self.scale_sel)
-        self.timeslider.grid(row=19, column=0, columnspan=3)
+        self.timeslider.grid(row=15, column=0, columnspan=3)
+
+        self.label1 = Label(self, text="Time Slider")
+        self.label1.grid(row=16, column=1)
 
         self.timer = ttkTimer(self.OnTimer, 1.0)
         self.timer.start()  # start Thread
+
+        self.volume_var = IntVar()
+        self.volslider = Scale(self, variable=self.volume_var, command=self.volume_sel, from_=0, to=100, orient=HORIZONTAL, length=410)
+
+        self.volslider.grid(row=20, column=0, columnspan=3)
+
+        self.label1 = Label(self, text="Volume Slider")
+        self.label1.grid(row=21, column=1)
 
     """
     MQTT COMMANDS
@@ -268,6 +270,13 @@ class FrameApp(Frame):
         if self.timeslider_last_val != sval:
             mval = "%.0f" % (nval * 1000)
             self.player.set_time(int(mval))  # expects milliseconds
+
+    def volume_sel(self, evt):
+        if self.player.listPlayer.get_media_player() == None: #nothing being played
+            return
+        volume = self.volume_var.get()
+        if self.player.audio_set_volume(volume) == -1:
+            print("Failed to set volume")
 
     def add_to_list(self):
         """
@@ -353,10 +362,7 @@ class FrameApp(Frame):
         """
         Whatever function we want to test
         """
-        print("Current Number Threads:", threading.active_count())
-        self.print_current_song_info()
-        self.df_songs.clear_all_youtube_links()
-        print("Youtube Links Cleared from Dataframe")
+        self.player.change_volume(-10)
 
     def thread_transmit(self):
         """
@@ -656,6 +662,9 @@ class FrameApp(Frame):
         df_file = askopenfile()
         self.df_songs.import_csv(file_path=df_file)
 
+    def clear_smartify_data(self):
+        self.df_songs = Music_Dataframe()
+
 
 class ttkTimer(Thread):
     """a class serving same function as wxTimer... but there may be better ways to do this
@@ -686,6 +695,9 @@ def _quit():
     print("Closing App...")
     for subprocess in running_subprocesses:
         subprocess.terminate()  # kill all running subprocesses
+
+    app.df_songs.clear_all_youtube_links()
+    app.df_songs.export_csv(file_path=".smartify.csv")
 
     root = Tk()
     root.quit()     # stops mainloop
