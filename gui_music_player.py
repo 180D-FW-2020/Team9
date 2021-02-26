@@ -45,6 +45,7 @@ class FrameApp(Frame):
         smartify_menu.add_cascade(label="File", menu=file_menu)
 
         file_menu.add_command(label="Add Song Directory", command=self.add_to_list)
+        file_menu.add_command(label="Clear Smartify Data", command=self.clear_smartify_data)
 
         emotion_menu = Menu(smartify_menu)
         smartify_menu.add_cascade(label="Emotion", menu=emotion_menu)
