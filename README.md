@@ -77,7 +77,24 @@ To use EmotionDetection functions from the Player, Install dependent libraries f
 - TinyTag (pip install tinytag)
 - Pandas (pip install pandas)
 - Speech_Recognition (pip install SpeechRecognition)
+- PyAudio (pip install Pyaudio): may have problems on windows! 
 - paho-mqtt (pip install paho-mqtt)
+
+**There is an issue with PyAudio Library; Please install it manually!**
+
+Windows:
+There are many reported errors with installing Pyaudio on Windows:
+If pip/conda install PyAudio does not work, please download it manually here
+[Download Windows Binary](https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyaudio)
+
+and install the Pyaudio for python 3.8 matching the hardware (32bit, 64bit). (current version of PyAudio is 0.2.11)
+Either *PyAudio‑0.2.11‑cp38‑cp38‑win_amd64.whl* OR *PyAudio‑0.2.11‑cp38‑cp38‑win32.whl*
+
+After downloading, open your command line and type
+pip install *file for pyaudio .whl*
+
+Non-Windows:
+*conda install PyAudio or pip install Pyaudio*
 
 **Controller (IMU/Voice):** 
 The controller was meant to be used on a RaspberryPi with BerryIMU. 
