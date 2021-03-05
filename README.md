@@ -4,8 +4,8 @@
 
 1. [Introduction](#introduction)
 2. [Setup](#paragraph1)
-    1. [Project Dependencies]
-    2. [Issues](#subparagraph1)
+    1. [Project Dependencies](#subparagraph1)
+    2. [Issues](#subparagraph2)
 3. [Others](#paragraph2)
 
 ## Introduction <a name="introduction"></a>
@@ -28,6 +28,31 @@ Link to the most recent version of model.h5 will be inside *modules/emotionDetec
 Download the model.h5, and place it in *modules/emotionDetection/model.h5*
 
 Setup/Project Dependencies Pages will be re-organized once it is finalized.
+
+**If using Conda Environment**
+
+Please use the command
+*conda env create -f environment.yml*
+
+or 
+
+*conda env update -f environment.yml*
+
+**There is an issue with PyAudio Library; Please install it manually!**
+
+Windows:
+There are many reported errors with installing Pyaudio:
+If pip/conda install PyAudio does not work, please go to 
+[Download Windows Binary](https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyaudio)
+and install the Pyaudio for python 3.8 matching the hardware (32bit, 64bit).
+
+After downloading, open your command line and type
+pip install *file for pyaudio .whl*
+
+Non-Windows:
+*conda install PyAudio or pip install Pyaudio*
+
+If you do not want to use a conda environment, please refer to Below in **Project Dependencies* 
 
 ## Project Dependencies <a name="subparagraph1"></a>
 
