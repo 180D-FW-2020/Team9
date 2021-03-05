@@ -41,10 +41,12 @@ or
 **There is an issue with PyAudio Library; Please install it manually!**
 
 Windows:
-There are many reported errors with installing Pyaudio:
-If pip/conda install PyAudio does not work, please go to 
+There are many reported errors with installing Pyaudio on Windows:
+If pip/conda install PyAudio does not work, please download it manually here
 [Download Windows Binary](https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyaudio)
-and install the Pyaudio for python 3.8 matching the hardware (32bit, 64bit).
+
+and install the Pyaudio for python 3.8 matching the hardware (32bit, 64bit). (current version of PyAudio is 0.2.11)
+Either *PyAudio‑0.2.11‑cp38‑cp38‑win_amd64.whl* OR *PyAudio‑0.2.11‑cp38‑cp38‑win32.whl*
 
 After downloading, open your command line and type
 pip install *file for pyaudio .whl*
