@@ -456,12 +456,12 @@ class FrameApp(Frame):
         """
         if self.receive_msg == False:
             self.client.loop_start()
-            self.button_receive.configure(text="Receiver: Toggle ON")
+            self.button_receive.configure(text="Receiver: ON")
             print("Receiver Turned On!")
             self.receive_msg = True
         else:
             self.client.loop_stop()
-            self.button_receive.configure(text="Receiver: Toggle OFF")
+            self.button_receive.configure(text="Receiver: OFF")
             print("Receiver Turned Off!")
             self.receive_msg = False
 
