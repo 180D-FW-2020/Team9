@@ -36,7 +36,13 @@ class Voice_Recognition:
             # wait a second for to adjust for ambient noise before inputting a voice command
             rec.adjust_for_ambient_noise(source)
             audio = rec.listen(source)
-            strinput = rec.recognize_google(audio)
+            try:
+                strinput = rec.recognize_google(audio)
+            except sr.UnknownValueError as error:
+                print("Hmmm. We didn't hear anything.")
+                self.command = "ERROR"
+                return
+
             # for an offline version use:
             # strinput = rec.recognize_sphinx(audio)
             # Karunesh: However the speech recognition seems much worse than the gooogle API

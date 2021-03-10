@@ -44,29 +44,36 @@ class FrameApp(Frame):
         file_menu = Menu(smartify_menu)
         smartify_menu.add_cascade(label="File", menu=file_menu)
 
-        file_menu.add_command(label="Add Song Directory", command=self.add_to_list)
-        file_menu.add_command(label="Clear Smartify Data", command=self.clear_smartify_data)
+        file_menu.add_command(label="Add Song Directory",
+                              command=self.add_to_list)
+        file_menu.add_command(label="Clear Smartify Data",
+                              command=self.clear_smartify_data)
 
         emotion_menu = Menu(smartify_menu)
         smartify_menu.add_cascade(label="Emotion", menu=emotion_menu)
 
-        emotion_menu.add_command(label="Export Emotion Data", command=self.export_csv)
-        emotion_menu.add_command(label="Import Emotion Data", command=self.import_csv)
-        emotion_menu.add_command(label="Run Emotion Detection", command=self.thread_detect_user_emotion)
+        emotion_menu.add_command(
+            label="Export Emotion Data", command=self.export_csv)
+        emotion_menu.add_command(
+            label="Import Emotion Data", command=self.import_csv)
+        emotion_menu.add_command(
+            label="Run Emotion Detection", command=self.thread_detect_user_emotion)
 
         player_menu = Menu(smartify_menu)
         smartify_menu.add_cascade(label="Player", menu=player_menu)
 
-        player_menu.add_command(label="Play/Pause", command=self.play_pause_music)
+        player_menu.add_command(
+            label="Play/Pause", command=self.play_pause_music)
         player_menu.add_command(label="Previous", command=self.previous_song)
         player_menu.add_command(label="Next", command=self.next_song)
         player_menu.add_command(label="Stop", command=self.stop)
-        player_menu.add_command(label="Play Random Song", command=self.play_random_playlist)
+        player_menu.add_command(label="Play Random Song",
+                                command=self.play_random_playlist)
 
         self.grid(padx=20, pady=20)
         self.player = VLC_Audio_Player()
         self.df_songs = Music_Dataframe()
-        self.df_songs.import_csv(".smartify.csv") #import from default path
+        self.df_songs.import_csv(".smartify.csv")  # import from default path
 
         self.voice = Voice_Recognition()
         self.voice_thread = Thread(target=self.speechGet)
@@ -92,48 +99,58 @@ class FrameApp(Frame):
         self.client = self.initialize_mqtt()  # connect to broker and subscribe
 
         self.emotion = 4
-        self.emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful", 3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
-
+        self.emotion_dict = {0: "Angry", 1: "Disgusted", 2: "Fearful",
+                             3: "Happy", 4: "Neutral", 5: "Sad", 6: "Surprised"}
 
         # --------------
         # GUI code below
         # --------------
 
-        self.button_transmit = Button(self, text="Transmitter: OFF", command=self.thread_transmit, width=12)
+        self.button_transmit = Button(
+            self, text="Transmitter: OFF", command=self.thread_transmit, width=12)
         self.button_transmit.grid(row=1, column=0)
         self.TChannel = Entry(self, width=14)
         self.TChannel.grid(row=2, column=0)
-        self.button_TChannel = Button(self, text="Load", command=self.transmit_channel, width=12)
+        self.button_TChannel = Button(
+            self, text="Load", command=self.transmit_channel, width=12)
         self.button_TChannel.grid(row=3, column=0)
 
-        self.button_receive = Button(self, text="Receiver: OFF", command=self.receive, width=12)
+        self.button_receive = Button(
+            self, text="Receiver: OFF", command=self.receive, width=12)
         self.button_receive.grid(row=1, column=2)
         self.RChannel = Entry(self, width=14)
         self.RChannel.grid(row=2, column=2)
-        self.button_RChannel = Button(self, text="Load", command=self.receive_channel, width=12)
+        self.button_RChannel = Button(
+            self, text="Load", command=self.receive_channel, width=12)
         self.button_RChannel.grid(row=3, column=2)
 
-        self.button_emotion_detection = Button(self, text="Detect Emotion", command=self.thread_detect_user_emotion, width=12)
+        self.button_emotion_detection = Button(
+            self, text="Detect Emotion", command=self.thread_detect_user_emotion, width=12)
         self.button_emotion_detection.grid(row=4, column=0)
 
         # Voice recognition
         # row 4, column 2
-        self.button_voice = Button(self, text="Voice Command", command=self.thread_voice, width=12)
+        self.button_voice = Button(
+            self, text="Voice Command", command=self.thread_voice, width=12)
         self.button_voice.grid(row=4, column=2)
 
-        self.button_add_songs = Button(self, text="Shuffle", command=self.play_random_playlist, width=12)
+        self.button_add_songs = Button(
+            self, text="Shuffle", command=self.play_random_playlist, width=12)
         self.button_add_songs.grid(row=3, column=1)
 
         # Song name
         # row 5, column 0, columnspan 3
 
-        self.button_play_pause = Button(self, text="▶️", command=self.play_pause_music, width=12)
+        self.button_play_pause = Button(
+            self, text="▶️", command=self.play_pause_music, width=12)
         self.button_play_pause.grid(row=6, column=1)
 
-        self.button_previous = Button(self, text="⏮", command=self.previous_song, width=12)
+        self.button_previous = Button(
+            self, text="⏮", command=self.previous_song, width=12)
         self.button_previous.grid(row=6, column=0)
 
-        self.button_next = Button(self, text="⏭", command=self.next_song, width=12)
+        self.button_next = Button(
+            self, text="⏭", command=self.next_song, width=12)
         self.button_next.grid(row=6, column=2)
 
         self.button_stop = Button(self, text="⏹", command=self.stop, width=12)
@@ -169,7 +186,8 @@ class FrameApp(Frame):
         self.scale_var = DoubleVar()
         self.timeslider_last_val = ""
 
-        self.timeslider = Scale(self, variable=self.scale_var, from_=0, to=1000, orient=HORIZONTAL, length=410)
+        self.timeslider = Scale(
+            self, variable=self.scale_var, from_=0, to=1000, orient=HORIZONTAL, length=410)
 
         # Update only on Button Release
         self.timeslider.bind("<ButtonRelease-1>", self.scale_sel)
@@ -183,7 +201,8 @@ class FrameApp(Frame):
 
         self.volume_var = IntVar()
 
-        self.volslider = Scale(self, variable=self.volume_var, command=self.volume_sel, from_=0, to=100, orient=HORIZONTAL, length=410)
+        self.volslider = Scale(self, variable=self.volume_var, command=self.volume_sel,
+                               from_=0, to=100, orient=HORIZONTAL, length=410)
 
         self.volslider.grid(row=20, column=0, columnspan=3)
 
@@ -230,7 +249,8 @@ class FrameApp(Frame):
         if rc == 0:
             print("Connected to MQTT Broker!")
         else:
-            print("Failed to connect to MQTT Broker, Transmit/Recieve will not work, return code %d\n", rc)
+            print(
+                "Failed to connect to MQTT Broker, Transmit/Recieve will not work, return code %d\n", rc)
 
     def on_message(self, client, userdata, msg):
         """
@@ -274,7 +294,7 @@ class FrameApp(Frame):
             self.player.set_time(int(mval))  # expects milliseconds
 
     def volume_sel(self, evt):
-        if self.player.listPlayer.get_media_player() == None: #nothing being played
+        if self.player.listPlayer.get_media_player() == None:  # nothing being played
             return
         volume = self.volume_var.get()
         if self.player.audio_set_volume(volume) == -1:
@@ -390,7 +410,8 @@ class FrameApp(Frame):
     def transmit_channel(self):
         input = self.TChannel.get()
         self.transmitter.topic = self.default_topic + str(input)
-        print("the transmitter channel name has been changed to: " + self.transmitter.topic)
+        print("the transmitter channel name has been changed to: " +
+              self.transmitter.topic)
 
     def transmit(self):
         """
@@ -466,9 +487,11 @@ class FrameApp(Frame):
             if player_song_name == songname:  # songname matches
                 # only change timestamp of song when off by more than 5 sec.
                 if abs(player_songtime - songtime) > 5000:
-                    self.play_song(songname, artist=artistname, start_time=int(songtime))
+                    self.play_song(songname, artist=artistname,
+                                   start_time=int(songtime))
             else:
-                self.play_song(songname, artist=artistname, start_time=int(songtime))
+                self.play_song(songname, artist=artistname,
+                               start_time=int(songtime))
 
         elif command == "PLAY":
             self.play()
@@ -542,13 +565,19 @@ class FrameApp(Frame):
     def speechGet(self):
         print("Please enter your voice command.")
         self.voice.speechGet()
-        while self.voice.getCommand() == "ERROR":
+        voiceattempt = 0
+        while self.voice.getCommand() == "ERROR" and voiceattempt < 2:
             print("Unrecognized input. Please enter your voice command again.")
             self.voice.speechGet()
-        print("Got it. We're on it now.")
-        command_dict = self.voice.getDict()
-        print(command_dict)
-        self.parse_command(command_dict)
+            voiceattempt = voiceattempt + 1
+        if self.voice.getCommand() == "ERROR":
+            print(
+                "Sorry, we couldn't hear anything from your mic. Please try again later.")
+        else:
+            print("Got it. We're on it now.")
+            command_dict = self.voice.getDict()
+            print(command_dict)
+            self.parse_command(command_dict)
         self.voice_on = False
 
     def search_song_online(self, song_info):
