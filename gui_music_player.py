@@ -528,8 +528,18 @@ class FrameApp(Frame):
             if self.enable_youtube_search:
                 song_info = {'title': title, 'artist': artist}
                 # search song on separate thread
-                youtube_link = self.search_song_online(song_info)
-                video = pafy.new(youtube_link)
+                try:
+                    youtube_link = self.search_song_online(song_info)
+                except Exception as e:
+                    print("Error occured searching song online")
+                    return
+
+                try:
+                    video = pafy.new(youtube_link)
+                except Exception as e:
+                    print("Error occured playing song online; Possible copyright issues")
+                    return
+
                 audio = video.getbestaudio()
                 audio_link = audio.url
 
