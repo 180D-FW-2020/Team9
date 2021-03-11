@@ -702,7 +702,9 @@ class FrameApp(Frame):
         """
         Sets Dataframe values to equal the .csv file, if the columns are valid
         """
-        df_file = askopenfile()
+        df_file = askopenfile().name
+        print("Importing data from..." , df_file)
+
         self.df_songs.import_csv(file_path=df_file)
 
     def clear_smartify_data(self):
